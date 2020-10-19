@@ -17,20 +17,20 @@
 
 
 void fasten_main(
-		sycl::handler &h,
+		clsycl::handler &h,
 		size_t posesPerWI, size_t wgSize,
 		size_t ntypes, size_t nposes,
 		size_t natlig, size_t natpro,
-		const sycl::accessor<Atom, 1, R, Global> &protein_molecule,
-		const sycl::accessor<Atom, 1, R, Global> &ligand_molecule,
-		const sycl::accessor<float, 1, R, Global> &transforms_0,
-		const sycl::accessor<float, 1, R, Global> &transforms_1,
-		const sycl::accessor<float, 1, R, Global> &transforms_2,
-		const sycl::accessor<float, 1, R, Global> &transforms_3,
-		const sycl::accessor<float, 1, R, Global> &transforms_4,
-		const sycl::accessor<float, 1, R, Global> &transforms_5,
-		const sycl::accessor<FFParams, 1, R, Global> &forcefield,
-		const sycl::accessor<float, 1, RW, Global> &etotals) {
+		clsycl::accessor<Atom, 1, R, Global> protein_molecule,
+		clsycl::accessor<Atom, 1, R, Global> ligand_molecule,
+		clsycl::accessor<float, 1, R, Global> transforms_0,
+		clsycl::accessor<float, 1, R, Global> transforms_1,
+		clsycl::accessor<float, 1, R, Global> transforms_2,
+		clsycl::accessor<float, 1, R, Global> transforms_3,
+		clsycl::accessor<float, 1, R, Global> transforms_4,
+		clsycl::accessor<float, 1, R, Global> transforms_5,
+		clsycl::accessor<FFParams, 1, R, Global> forcefield,
+		clsycl::accessor<float, 1, RW, Global> etotals) {
 
 
 	constexpr const auto FloatMax = std::numeric_limits<float>::max();
@@ -39,13 +39,13 @@ void fasten_main(
 	size_t global = std::ceil((nposes) / static_cast<double> (posesPerWI));
 	global = wgSize * std::ceil(static_cast<double> (global) / wgSize);
 
-	sycl::accessor<FFParams, 1, RW, Local> local_forcefield(sycl::range<1>(ntypes), h);
+	clsycl::accessor<FFParams, 1, RW, Local> local_forcefield(clsycl::range<1>(ntypes), h);
 
-	sycl::accessor<float, 2, RW, Local> etot(sycl::range<2>(wgSize, posesPerWI), h);
-	sycl::accessor<sycl::float3, 2, RW, Local> lpos(sycl::range<2>(wgSize, posesPerWI), h);
-	sycl::accessor<sycl::float4, 3, RW, Local> transform(sycl::range<3>(wgSize, posesPerWI, 3), h);
+	clsycl::accessor<float, 2, RW, Local> etot(clsycl::range<2>(wgSize, posesPerWI), h);
+	clsycl::accessor<clsycl::float3, 2, RW, Local> lpos(clsycl::range<2>(wgSize, posesPerWI), h);
+	clsycl::accessor<clsycl::float4, 3, RW, Local> transform(clsycl::range<3>(wgSize, posesPerWI, 3), h);
 
-	h.parallel_for<class bude_kernel>(sycl::nd_range<1>(global, wgSize), [=](sycl::nd_item<1> item) {
+	h.parallel_for<class bude_kernel>(clsycl::nd_range<1>(global, wgSize), [=](clsycl::nd_item<1> item) {
 
 		const size_t lid = item.get_local_id(0);
 		const size_t gid = item.get_group(0);
@@ -58,37 +58,37 @@ void fasten_main(
 		// TODO async_work_group_copy takes only gentypes, so no FFParams,
 		//  casting *_ptr<ElementType> parameter requires first converting to void and then to gentype
 		//  although probably free, there must be a better way of doing this
-		sycl::device_event event = item.async_work_group_copy<char>(
-				sycl::local_ptr<char>(sycl::local_ptr<void>(local_forcefield.get_pointer())),
-				sycl::global_ptr<char>(sycl::global_ptr<void>(forcefield.get_pointer())),
-				ntypes * sizeof(FFParams) / sizeof(char));
+		clsycl::device_event event = item.async_work_group_copy<float>(
+				clsycl::local_ptr<float>(clsycl::local_ptr<void>(local_forcefield.get_pointer())),
+				clsycl::global_ptr<float>(clsycl::global_ptr<void>(forcefield.get_pointer())),
+				ntypes * sizeof(FFParams) / sizeof(float));
 
 		// Compute transformation matrix to private memory
 		const size_t lsz = lrange;
 		for (size_t i = 0; i < posesPerWI; i++) {
 			size_t index = ix + i * lsz;
 
-			const float sx = sycl::sin(transforms_0[index]);
-			const float cx = sycl::cos(transforms_0[index]);
-			const float sy = sycl::sin(transforms_1[index]);
-			const float cy = sycl::cos(transforms_1[index]);
-			const float sz = sycl::sin(transforms_2[index]);
-			const float cz = sycl::cos(transforms_2[index]);
+			const float sx = clsycl::sin(transforms_0[index]);
+			const float cx = clsycl::cos(transforms_0[index]);
+			const float sy = clsycl::sin(transforms_1[index]);
+			const float cy = clsycl::cos(transforms_1[index]);
+			const float sz = clsycl::sin(transforms_2[index]);
+			const float cz = clsycl::cos(transforms_2[index]);
 
-			transform[sycl::id<3>(lid, i, 0)].x() = cy * cz;
-			transform[sycl::id<3>(lid, i, 0)].y() = sx * sy * cz - cx * sz;
-			transform[sycl::id<3>(lid, i, 0)].z() = cx * sy * cz + sx * sz;
-			transform[sycl::id<3>(lid, i, 0)].w() = transforms_3[index];
-			transform[sycl::id<3>(lid, i, 1)].x() = cy * sz;
-			transform[sycl::id<3>(lid, i, 1)].y() = sx * sy * sz + cx * cz;
-			transform[sycl::id<3>(lid, i, 1)].z() = cx * sy * sz - sx * cz;
-			transform[sycl::id<3>(lid, i, 1)].w() = transforms_4[index];
-			transform[sycl::id<3>(lid, i, 2)].x() = -sy;
-			transform[sycl::id<3>(lid, i, 2)].y() = sx * cy;
-			transform[sycl::id<3>(lid, i, 2)].z() = cx * cy;
-			transform[sycl::id<3>(lid, i, 2)].w() = transforms_5[index];
+			transform[clsycl::id<3>(lid, i, 0)].x() = cy * cz;
+			transform[clsycl::id<3>(lid, i, 0)].y() = sx * sy * cz - cx * sz;
+			transform[clsycl::id<3>(lid, i, 0)].z() = cx * sy * cz + sx * sz;
+			transform[clsycl::id<3>(lid, i, 0)].w() = transforms_3[index];
+			transform[clsycl::id<3>(lid, i, 1)].x() = cy * sz;
+			transform[clsycl::id<3>(lid, i, 1)].y() = sx * sy * sz + cx * cz;
+			transform[clsycl::id<3>(lid, i, 1)].z() = cx * sy * sz - sx * cz;
+			transform[clsycl::id<3>(lid, i, 1)].w() = transforms_4[index];
+			transform[clsycl::id<3>(lid, i, 2)].x() = -sy;
+			transform[clsycl::id<3>(lid, i, 2)].y() = sx * cy;
+			transform[clsycl::id<3>(lid, i, 2)].z() = cx * cy;
+			transform[clsycl::id<3>(lid, i, 2)].w() = transforms_5[index];
 
-			etot[sycl::id<2>(lid, i)] = ZERO;
+			etot[clsycl::id<2>(lid, i)] = ZERO;
 		}
 
 		item.wait_for(event);
@@ -102,12 +102,12 @@ void fasten_main(
 			const bool lhphb_ltz = l_params.hphb < ZERO;
 			const bool lhphb_gtz = l_params.hphb > ZERO;
 
-			const sycl::float4 linitpos(l_atom.x, l_atom.y, l_atom.z, ONE);
+			const clsycl::float4 linitpos(l_atom.x, l_atom.y, l_atom.z, ONE);
 			for (size_t i = 0; i < posesPerWI; i++) {
-				const sycl::id<2> id(lid, i);
-				const sycl::id<3> i0(lid, i, 0);
-				const sycl::id<3> i1(lid, i, 1);
-				const sycl::id<3> i2(lid, i, 2);
+				const clsycl::id<2> id(lid, i);
+				const clsycl::id<3> i0(lid, i, 0);
+				const clsycl::id<3> i1(lid, i, 1);
+				const clsycl::id<3> i2(lid, i, 2);
 				// Transform ligand atom
 				lpos[id].x() = transform[i0].w() +
 				               linitpos.x() * transform[i0].x() +
@@ -149,16 +149,16 @@ void fasten_main(
 				const float dslv_init = p_hphb + l_hphb;
 
 				for (size_t i = 0; i < posesPerWI; i++) {
-					const sycl::id<2> id(lid, i);
+					const clsycl::id<2> id(lid, i);
 					// Calculate distance between atoms
 
 					const float x = lpos[id].x() - p_atom.x;
 					const float y = lpos[id].y() - p_atom.y;
 					const float z = lpos[id].z() - p_atom.z;
-					const float distij = sycl::native::sqrt(x * x + y * y + z * z);
+					const float distij = clsycl::native::sqrt(x * x + y * y + z * z);
 
 					//TODO replace with:
-					// const float distij = sycl::distance(lpos[id], sycl::float3(p_atom.x, p_atom.y, p_atom.z));
+					// const float distij = clsycl::distance(lpos[id], clsycl::float3(p_atom.x, p_atom.y, p_atom.z));
 
 					// Calculate the sum of the sphere radii
 					const float distbb = distij - radij;
@@ -169,7 +169,7 @@ void fasten_main(
 
 					// Calculate formal and dipole charge interactions
 					float chrg_e = chrg_init * ((zone1 ? 1 : (ONE - distbb * elcdst1)) * (distbb < elcdst ? 1 : ZERO));
-					const float neg_chrg_e = -sycl::fabs(chrg_e);
+					const float neg_chrg_e = -clsycl::fabs(chrg_e);
 					chrg_e = type_E ? neg_chrg_e : chrg_e;
 					etot[id] += chrg_e * CNSTNT;
 
@@ -187,7 +187,7 @@ void fasten_main(
 
 		if (td_base < nposes) {
 			for (size_t i = 0; i < posesPerWI; i++) {
-				etotals[td_base + i * lrange] = etot[sycl::id<2>(lid, i)] * HALF;
+				etotals[td_base + i * lrange] = etot[clsycl::id<2>(lid, i)] * HALF;
 			}
 		}
 

@@ -3,6 +3,7 @@
 #include <vector>
 #include <chrono>
 #include <iostream>
+#include <fstream>
 #include <functional>
 #include <algorithm>
 #include <CL/sycl.hpp>
@@ -28,7 +29,7 @@ struct Params {
 	size_t posesPerWI;
 	size_t wgSize;
 
-	sycl::device device;
+	clsycl::device device;
 
 	friend std::ostream &operator<<(std::ostream &os, const Params &params) {
 		os <<
@@ -39,26 +40,26 @@ struct Params {
 		   "iterations:  " << params.iterations << "\n" <<
 		   "posesPerWI:  " << params.posesPerWI << "\n" <<
 		   "wgSize:      " << params.wgSize << "\n" <<
-		   "SYCL device: " << params.device.get_info<cl::sycl::info::device::name>();
+		   "SYCL device: " << params.device.get_info<clsycl::info::device::name>();
 		return os;
 	}
 };
 
 void fasten_main(
-		sycl::handler &h,
+		clsycl::handler &h,
 		size_t posesPerWI, size_t wgSize,
 		size_t ntypes, size_t nposes,
 		size_t natlig, size_t natpro,
-		const sycl::accessor<Atom, 1, R, Global> &protein_molecule,
-		const sycl::accessor<Atom, 1, R, Global> &ligand_molecule,
-		const sycl::accessor<float, 1, R, Global> &transforms_0,
-		const sycl::accessor<float, 1, R, Global> &transforms_1,
-		const sycl::accessor<float, 1, R, Global> &transforms_2,
-		const sycl::accessor<float, 1, R, Global> &transforms_3,
-		const sycl::accessor<float, 1, R, Global> &transforms_4,
-		const sycl::accessor<float, 1, R, Global> &transforms_5,
-		const sycl::accessor<FFParams, 1, R, Global> &forcefield,
-		const sycl::accessor<float, 1, RW, Global> &etotals);
+		clsycl::accessor<Atom, 1, R, Global> protein_molecule,
+		clsycl::accessor<Atom, 1, R, Global> ligand_molecule,
+		clsycl::accessor<float, 1, R, Global> transforms_0,
+		clsycl::accessor<float, 1, R, Global> transforms_1,
+		clsycl::accessor<float, 1, R, Global> transforms_2,
+		clsycl::accessor<float, 1, R, Global> transforms_3,
+		clsycl::accessor<float, 1, R, Global> transforms_4,
+		clsycl::accessor<float, 1, R, Global> transforms_5,
+		clsycl::accessor<FFParams, 1, R, Global> forcefield,
+		clsycl::accessor<float, 1, RW, Global> etotals);
 
 void printTimings(const Params &params, const TimePoint &start, const TimePoint &end, double poses_per_wi) {
 
@@ -111,25 +112,25 @@ std::vector<T> readNStruct(const std::string &path) {
 	return xs;
 }
 
-std::string deviceName(sycl::info::device_type type) {
+std::string deviceName(clsycl::info::device_type type) {
 	//@formatter:off
 	switch (type){
-		case sycl::info::device_type::cpu: return "cpu";
-		case sycl::info::device_type::gpu: return "gpu";
-		case sycl::info::device_type::accelerator: return "accelerator";
-		case sycl::info::device_type::custom: return "custom";
-		case sycl::info::device_type::automatic: return "automatic";
-		case sycl::info::device_type::host: return "host";
-		case sycl::info::device_type::all: return "all";
+		case clsycl::info::device_type::cpu: return "cpu";
+		case clsycl::info::device_type::gpu: return "gpu";
+		case clsycl::info::device_type::accelerator: return "accelerator";
+		case clsycl::info::device_type::custom: return "custom";
+		case clsycl::info::device_type::automatic: return "automatic";
+		case clsycl::info::device_type::host: return "host";
+		case clsycl::info::device_type::all: return "all";
 		default: return "(unknown: " + std::to_string(static_cast<unsigned int >(type))+ ")";
 	}
 	//@formatter:on
 }
 
-void printSimple(const cl::sycl::device &device, size_t index) {
+void printSimple(const clsycl::device &device, size_t index) {
 	std::cout << std::setw(3) << index << ". "
-	          << device.get_info<cl::sycl::info::device::name>()
-	          << "(" << deviceName(device.get_info<cl::sycl::info::device::device_type>()) << ")"
+	          << device.get_info<clsycl::info::device::name>()
+	          << "(" << deviceName(device.get_info<clsycl::info::device::device_type>()) << ")"
 	          << std::endl;
 }
 
@@ -165,7 +166,7 @@ Params loadParameters(const std::vector<std::string> &args) {
 
 	const auto bindInt = [](const std::string &param, size_t &dest, const std::string &name) {
 		try {
-			auto parsed = std::stoul(param);
+			auto parsed = std::stol(param);
 			if (parsed < 0) {
 				std::cerr << "positive integer required for <" << name << ">: `" << parsed << "`" << std::endl;
 				std::exit(EXIT_FAILURE);
@@ -177,7 +178,7 @@ Params loadParameters(const std::vector<std::string> &args) {
 		}
 	};
 
-	const auto &devices = cl::sycl::device::get_devices();
+	const auto &devices = clsycl::device::get_devices();
 	if (devices.empty()) {
 		std::cerr << "No SYCL devices available!" << std::endl;
 		std::exit(EXIT_FAILURE);
@@ -197,7 +198,7 @@ Params loadParameters(const std::vector<std::string> &args) {
 		if (readParam(i, arg, {"--posesperwi", "-p"}, std::bind(bindInt, _1, std::ref(params.posesPerWI), "posesperwi"))) continue;
 		if (readParam(i, arg, {"--wgsize", "-w"}, std::bind(bindInt, _1, std::ref(params.wgSize), "wgsize"))) continue;
 		if (readParam(i, arg, {"--device", "-d"}, [&](const std::string &param) {
-			try { params.device = cl::sycl::device::get_devices().at(std::stoul(param)); }
+			try { params.device = clsycl::device::get_devices().at(std::stoul(param)); }
 			catch (const std::exception &e) {
 				std::cerr << "Unable to parse/select device index `" << param << "`:"
 				          << e.what() << std::endl;
@@ -264,24 +265,24 @@ std::vector<float> runKernel(Params params) {
 	auto start = std::chrono::high_resolution_clock::now();
 
 
-	sycl::queue queue(params.device);
+	clsycl::queue queue(params.device);
 
 	{
 
-		sycl::buffer<Atom> protein(params.protein);
-		sycl::buffer<Atom> ligand(params.ligand);
-		sycl::buffer<float> transforms_0(params.poses[0]);
-		sycl::buffer<float> transforms_1(params.poses[1]);
-		sycl::buffer<float> transforms_2(params.poses[2]);
-		sycl::buffer<float> transforms_3(params.poses[3]);
-		sycl::buffer<float> transforms_4(params.poses[4]);
-		sycl::buffer<float> transforms_5(params.poses[5]);
-		sycl::buffer<FFParams> forcefield(params.forcefield);
-		sycl::buffer<float> results(energies);
+		clsycl::buffer<Atom> protein(params.protein.data(), params.protein.size());
+		clsycl::buffer<Atom> ligand(params.ligand.data(), params.ligand.size());
+		clsycl::buffer<float> transforms_0(params.poses[0].data(), params.poses[0].size());
+		clsycl::buffer<float> transforms_1(params.poses[1].data(), params.poses[1].size());
+		clsycl::buffer<float> transforms_2(params.poses[2].data(), params.poses[2].size());
+		clsycl::buffer<float> transforms_3(params.poses[3].data(), params.poses[3].size());
+		clsycl::buffer<float> transforms_4(params.poses[4].data(), params.poses[4].size());
+		clsycl::buffer<float> transforms_5(params.poses[5].data(), params.poses[5].size());
+		clsycl::buffer<FFParams> forcefield(params.forcefield.data(), params.forcefield.size());
+		clsycl::buffer<float> results(energies.data(), energies.size());
 
 
 		for (size_t i = 0; i < params.iterations; ++i) {
-			queue.submit([&](cl::sycl::handler &h) {
+			queue.submit([&](clsycl::handler &h) {
 				fasten_main(h,
 				            params.posesPerWI, params.wgSize,
 				            params.ntypes, params.nposes,

@@ -23,11 +23,13 @@
 #define FILE_POSES      DATA_DIR "/poses.dat"
 
 
-static constexpr sycl::access::mode R = sycl::access::mode::read;
-static constexpr sycl::access::mode RW = sycl::access::mode::read_write;
+namespace clsycl = cl::sycl;
 
-static constexpr sycl::target Global = sycl::target::global_buffer;
-static constexpr sycl::target Local = sycl::target::local;
+static constexpr clsycl::access::mode R = clsycl::access::mode::read;
+static constexpr clsycl::access::mode RW = clsycl::access::mode::read_write;
+
+static constexpr clsycl::access::target Global = clsycl::access::target::global_buffer;
+static constexpr clsycl::access::target Local = clsycl::access::target::local;
 
 struct __attribute__((__packed__)) Atom {
 	float x, y, z;

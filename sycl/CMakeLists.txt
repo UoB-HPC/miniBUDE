@@ -88,7 +88,7 @@ endif ()
 
 if (NOT ${SYCL_RUNTIME} STREQUAL "DPCPP")
     add_sycl_to_target(
-            TARGET bude_sycl
+            TARGET bude
             SOURCES ${SOURCES}) # must be the last
 endif ()
 
