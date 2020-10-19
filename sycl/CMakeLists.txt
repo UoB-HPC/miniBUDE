@@ -5,41 +5,40 @@ SET(CMAKE_VERBOSE_MAKEFILE ON)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-find_package(OpenMP REQUIRED)
 
-#if (SYCL_RUNTIME)
-#
-#    list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
-#
-#    if (${SYCL_RUNTIME} STREQUAL "HIPSYCL")
-#
-#        if (NOT HIPSYCL_INSTALL_DIR)
-#            message(FATAL_ERROR "HIPSYCL_INSTALL_DIR is undefined")
-#        endif ()
-#
-#        set(hipSYCL_DIR ${HIPSYCL_INSTALL_DIR}/lib/cmake)
-#        find_package(hipSYCL CONFIG REQUIRED)
-#        set(EXTRA_FLAGS -Wno-sign-compare -Wno-stringop-truncation)
-#    elseif (${SYCL_RUNTIME} STREQUAL "COMPUTECPP")
-#
-#        if (NOT ComputeCpp_DIR)
-#            message(FATAL_ERROR "ComputeCpp_DIR is undefined")
-#        endif ()
-#        add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
-#        set(COMPUTECPP_USER_FLAGS -O3 -fsycl-split-modules=20 -mllvm -inline-threshold=10000 -no-serial-memop)
-#        find_package(ComputeCpp REQUIRED)
-#        #        set(EXTRA_FLAGS  -pedantic)
-#    elseif (${SYCL_RUNTIME} STREQUAL "DPCPP")
-#
-#        set(CMAKE_CXX_STANDARD 11)
-#        set(CMAKE_CXX_COMPILER "dpcpp")
-#        set(EXTRA_FLAGS -pedantic)
-#    else ()
-#        message(FATAL_ERROR "SYCL_RUNTIME unsupported, must be one of HIPSYCL|COMPUTECPP|DPCPP, got ${SYCL_RUNTIME}")
-#    endif ()
-#else ()
-#    message(FATAL_ERROR "SYCL_RUNTIME not defined, must be one of HIPSYCL|COMPUTECPP|DPCPP")
-#endif ()
+if (SYCL_RUNTIME)
+
+    list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
+
+    if (${SYCL_RUNTIME} STREQUAL "HIPSYCL")
+
+        if (NOT HIPSYCL_INSTALL_DIR)
+            message(FATAL_ERROR "HIPSYCL_INSTALL_DIR is undefined")
+        endif ()
+
+        set(hipSYCL_DIR ${HIPSYCL_INSTALL_DIR}/lib/cmake)
+        find_package(hipSYCL CONFIG REQUIRED)
+        set(EXTRA_FLAGS -Wno-sign-compare -Wno-stringop-truncation)
+    elseif (${SYCL_RUNTIME} STREQUAL "COMPUTECPP")
+
+        if (NOT ComputeCpp_DIR)
+            message(FATAL_ERROR "ComputeCpp_DIR is undefined")
+        endif ()
+        add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
+        set(COMPUTECPP_USER_FLAGS -O3 -fsycl-split-modules=20 -mllvm -inline-threshold=10000 -no-serial-memop)
+        find_package(ComputeCpp REQUIRED)
+        #        set(EXTRA_FLAGS  -pedantic)
+    elseif (${SYCL_RUNTIME} STREQUAL "DPCPP")
+
+        set(CMAKE_CXX_STANDARD 11)
+        set(CMAKE_CXX_COMPILER "dpcpp")
+        set(EXTRA_FLAGS -pedantic)
+    else ()
+        message(FATAL_ERROR "SYCL_RUNTIME unsupported, must be one of HIPSYCL|COMPUTECPP|DPCPP, got ${SYCL_RUNTIME}")
+    endif ()
+else ()
+    message(FATAL_ERROR "SYCL_RUNTIME not defined, must be one of HIPSYCL|COMPUTECPP|DPCPP")
+endif ()
 
 
 set(SOURCES
@@ -85,8 +84,6 @@ if (${CMAKE_VERSION} VERSION_LESS "3.13.0")
 else ()
     target_link_options(bude PUBLIC LINKER:${CXX_EXTRA_LINKER_FLAGS})
 endif ()
-
-target_link_libraries(bude PUBLIC OpenMP::OpenMP_CXX OpenMP::OpenMP_C)
 
 
 if (NOT ${SYCL_RUNTIME} STREQUAL "DPCPP")

@@ -4,54 +4,61 @@
 #include <chrono>
 #include <iostream>
 #include <functional>
-#include <fstream>
+#include <algorithm>
+#include <CL/sycl.hpp>
 
 #include "bude.h"
 
 typedef std::chrono::high_resolution_clock::time_point TimePoint;
 
-
 struct Params {
 
-	int natlig;
-	int natpro;
-	int ntypes;
-	int nposes;
+	size_t natlig;
+	size_t natpro;
+	size_t ntypes;
+	size_t nposes;
 
 	std::vector<Atom> protein;
 	std::vector<Atom> ligand;
 	std::vector<FFParams> forcefield;
-
 	std::array<std::vector<float>, 6> poses;
 
-	int iterations;
+	size_t iterations;
+
+	size_t posesPerWI;
+	size_t wgSize;
+
+	sycl::device device;
 
 	friend std::ostream &operator<<(std::ostream &os, const Params &params) {
 		os <<
-		   "natlig:     " << params.natlig << "\n" <<
-		   "natpro:     " << params.natpro << "\n" <<
-		   "ntypes:     " << params.ntypes << "\n" <<
-		   "nposes:     " << params.nposes << "\n" <<
-		   "iterations: " << params.iterations;
+		   "natlig:      " << params.natlig << "\n" <<
+		   "natpro:      " << params.natpro << "\n" <<
+		   "ntypes:      " << params.ntypes << "\n" <<
+		   "nposes:      " << params.nposes << "\n" <<
+		   "iterations:  " << params.iterations << "\n" <<
+		   "posesPerWI:  " << params.posesPerWI << "\n" <<
+		   "wgSize:      " << params.wgSize << "\n" <<
+		   "SYCL device: " << params.device.get_info<cl::sycl::info::device::name>();
 		return os;
 	}
-
 };
 
-
-void fasten_main(int natlig,
-                 int natpro,
-                 const std::vector<Atom> &protein,
-                 const std::vector<Atom> &ligand,
-                 const std::vector<float> &transforms_0,
-                 const std::vector<float> &transforms_1,
-                 const std::vector<float> &transforms_2,
-                 const std::vector<float> &transforms_3,
-                 const std::vector<float> &transforms_4,
-                 const std::vector<float> &transforms_5,
-                 std::vector<float> &results,
-                 const std::vector<FFParams> &forcefield,
-                 int group);
+void fasten_main(
+		sycl::handler &h,
+		size_t posesPerWI, size_t wgSize,
+		size_t ntypes, size_t nposes,
+		size_t natlig, size_t natpro,
+		const sycl::accessor<Atom, 1, R, Global> &protein_molecule,
+		const sycl::accessor<Atom, 1, R, Global> &ligand_molecule,
+		const sycl::accessor<float, 1, R, Global> &transforms_0,
+		const sycl::accessor<float, 1, R, Global> &transforms_1,
+		const sycl::accessor<float, 1, R, Global> &transforms_2,
+		const sycl::accessor<float, 1, R, Global> &transforms_3,
+		const sycl::accessor<float, 1, R, Global> &transforms_4,
+		const sycl::accessor<float, 1, R, Global> &transforms_5,
+		const sycl::accessor<FFParams, 1, R, Global> &forcefield,
+		const sycl::accessor<float, 1, RW, Global> &etotals);
 
 void printTimings(const Params &params, const TimePoint &start, const TimePoint &end, double poses_per_wi) {
 
@@ -104,6 +111,28 @@ std::vector<T> readNStruct(const std::string &path) {
 	return xs;
 }
 
+std::string deviceName(sycl::info::device_type type) {
+	//@formatter:off
+	switch (type){
+		case sycl::info::device_type::cpu: return "cpu";
+		case sycl::info::device_type::gpu: return "gpu";
+		case sycl::info::device_type::accelerator: return "accelerator";
+		case sycl::info::device_type::custom: return "custom";
+		case sycl::info::device_type::automatic: return "automatic";
+		case sycl::info::device_type::host: return "host";
+		case sycl::info::device_type::all: return "all";
+		default: return "(unknown: " + std::to_string(static_cast<unsigned int >(type))+ ")";
+	}
+	//@formatter:on
+}
+
+void printSimple(const cl::sycl::device &device, size_t index) {
+	std::cout << std::setw(3) << index << ". "
+	          << device.get_info<cl::sycl::info::device::name>()
+	          << "(" << deviceName(device.get_info<cl::sycl::info::device::device_type>()) << ")"
+	          << std::endl;
+}
+
 Params loadParameters(const std::vector<std::string> &args) {
 
 	Params params = {};
@@ -111,64 +140,103 @@ Params loadParameters(const std::vector<std::string> &args) {
 	// Defaults
 	params.iterations = DEFAULT_ITERS;
 	params.nposes = DEFAULT_NPOSES;
+	params.wgSize = DEFAULT_WGSIZE;
+	params.posesPerWI = DEFAULT_PPWI;
 
 	const auto readParam = [&args](size_t &current,
-	                               const std::string &emptyMessage,
-	                               const std::function<void(std::string)> &map) {
-		if (current + 1 < args.size()) {
-			current++;
-			return map(args[current]);
-		} else {
-			std::cerr << emptyMessage << std::endl;
+	                               const std::string &arg,
+	                               const std::initializer_list<std::string> &matches,
+	                               const std::function<void(std::string)> &handle) {
+		if (matches.size() == 0) return false;
+		if (std::find(matches.begin(), matches.end(), arg) != matches.end()) {
+			if (current + 1 < args.size()) {
+				current++;
+				handle(args[current]);
+			} else {
+				std::cerr << "[";
+				for (const auto &m : matches) std::cerr << m;
+				std::cerr << "] specified but no value was given" << std::endl;
+				std::exit(EXIT_FAILURE);
+			}
+			return true;
+		}
+		return false;
+	};
+
+	const auto bindInt = [](const std::string &param, size_t &dest, const std::string &name) {
+		try {
+			auto parsed = std::stoul(param);
+			if (parsed < 0) {
+				std::cerr << "positive integer required for <" << name << ">: `" << parsed << "`" << std::endl;
+				std::exit(EXIT_FAILURE);
+			}
+			dest = parsed;
+		} catch (...) {
+			std::cerr << "malformed value, integer required for <" << name << ">: `" << param << "`" << std::endl;
 			std::exit(EXIT_FAILURE);
 		}
 	};
 
+	const auto &devices = cl::sycl::device::get_devices();
+	if (devices.empty()) {
+		std::cerr << "No SYCL devices available!" << std::endl;
+		std::exit(EXIT_FAILURE);
+	} else {
+		std::cout << "Available SYCL devices:" << std::endl;
+
+		for (size_t j = 0; j < devices.size(); ++j) printSimple(devices[j], j);
+	}
+
+	params.device = devices[0];
+
 	for (size_t i = 0; i < args.size(); ++i) {
+		using namespace std::placeholders;
 		const auto arg = args[i];
-		if (arg == "--iterations" || arg == "-i") {
-			readParam(i, "--iterations specified but no value was given", [&](const std::string &param) {
-				auto iter = std::stoul(param);
-				if (iter < 0) {
-					std::cerr << "Invalid number of iterations: `" << param << "`" << std::endl;
-					std::exit(EXIT_FAILURE);
-				}
-				params.iterations = iter;
-			});
-		} else if (arg == "--numposes" || arg == "-n") {
-			readParam(i, "--numposes specified but no value was given ", [&](const std::string &param) {
-				auto nps = std::stoul(param);
-				if (nps < 0) {
-					std::cerr << "Invalid number of poses: `" << param << "`" << std::endl;
-					std::exit(EXIT_FAILURE);
-				}
-				params.nposes = nps;
-			});
-		} else if (arg == "--help" || arg == "-h") {
+		if (readParam(i, arg, {"--iterations", "-i"}, std::bind(bindInt, _1, std::ref(params.iterations), "iterations"))) continue;
+		if (readParam(i, arg, {"--numposes", "-n"}, std::bind(bindInt, _1, std::ref(params.nposes), "numposes"))) continue;
+		if (readParam(i, arg, {"--posesperwi", "-p"}, std::bind(bindInt, _1, std::ref(params.posesPerWI), "posesperwi"))) continue;
+		if (readParam(i, arg, {"--wgsize", "-w"}, std::bind(bindInt, _1, std::ref(params.wgSize), "wgsize"))) continue;
+		if (readParam(i, arg, {"--device", "-d"}, [&](const std::string &param) {
+			try { params.device = cl::sycl::device::get_devices().at(std::stoul(param)); }
+			catch (const std::exception &e) {
+				std::cerr << "Unable to parse/select device index `" << param << "`:"
+				          << e.what() << std::endl;
+				std::exit(EXIT_FAILURE);
+			}
+		})) { continue; }
+
+		if (arg == "--list" || arg == "-l") {
+			for (size_t j = 0; j < devices.size(); ++j) printSimple(devices[j], j);
+			std::exit(EXIT_SUCCESS);
+		}
+
+		if (arg == "--help" || arg == "-h") {
 			std::cout << "\n";
 			std::cout << "Usage: ./bude [OPTIONS]\n\n"
 			          << "Options:\n"
 			          << "  -h  --help               Print this message\n"
 			          << "  -i  --iterations I       Repeat kernel I times (default: " << DEFAULT_ITERS << ")\n"
-			          << "  -n  --numposes   N       Compute energies for N poses (default: " << DEFAULT_NPOSES << ")"
+			          << "  -n  --numposes   N       Compute energies for N poses (default: " << DEFAULT_NPOSES << ")\n"
+			          << "  -p  --poserperwi PPWI    Compute PPWI poses per work-item (default: " << DEFAULT_PPWI << ")\n"
+			          << "  -w  --wgsize     WGSIZE  Run with work-group size WGSIZE (default: " << DEFAULT_WGSIZE << ")\n"
+			          << "  -d  --device     INDEX   Select device at INDEX from output of --list(default: first device of the list)\n"
+			          << "  -l  --list               List available devices"
 			          << std::endl;
 			std::exit(EXIT_SUCCESS);
-		} else {
-			std::cout << "Unrecognized argument '" << arg << "' (try '--help')" << std::endl;
-			std::exit(EXIT_FAILURE);
 		}
+
+		std::cout << "Unrecognized argument '" << arg << "' (try '--help')" << std::endl;
+		std::exit(EXIT_FAILURE);
 	}
 
 	params.ligand = readNStruct<Atom>(FILE_LIGAND);
 	params.natlig = params.ligand.size();
-
 
 	params.protein = readNStruct<Atom>(FILE_PROTEIN);
 	params.natpro = params.protein.size();
 
 	params.forcefield = readNStruct<FFParams>(FILE_FORCEFIELD);
 	params.ntypes = params.forcefield.size();
-
 
 	auto poses = readNStruct<float>(FILE_POSES);
 	if (poses.size() / 6 != params.nposes) {
@@ -183,6 +251,7 @@ Params loadParameters(const std::vector<std::string> &args) {
 				params.poses[i].begin());
 
 	}
+
 	return params;
 }
 
@@ -194,22 +263,49 @@ std::vector<float> runKernel(Params params) {
 
 	auto start = std::chrono::high_resolution_clock::now();
 
-	#pragma omp parallel
-	for (int itr = 0; itr < params.iterations; itr++) {
 
-		#pragma omp for
-		for (int group = 0; group < (params.nposes / WGSIZE / PPWI); group++) {
-			fasten_main(params.natlig, params.natpro,
-			            params.protein, params.ligand,
-			            params.poses[0], params.poses[1], params.poses[2],
-			            params.poses[3], params.poses[4], params.poses[5],
-			            energies, params.forcefield, group);
+	sycl::queue queue(params.device);
+
+	{
+
+		sycl::buffer<Atom> protein(params.protein);
+		sycl::buffer<Atom> ligand(params.ligand);
+		sycl::buffer<float> transforms_0(params.poses[0]);
+		sycl::buffer<float> transforms_1(params.poses[1]);
+		sycl::buffer<float> transforms_2(params.poses[2]);
+		sycl::buffer<float> transforms_3(params.poses[3]);
+		sycl::buffer<float> transforms_4(params.poses[4]);
+		sycl::buffer<float> transforms_5(params.poses[5]);
+		sycl::buffer<FFParams> forcefield(params.forcefield);
+		sycl::buffer<float> results(energies);
+
+
+		for (size_t i = 0; i < params.iterations; ++i) {
+			queue.submit([&](cl::sycl::handler &h) {
+				fasten_main(h,
+				            params.posesPerWI, params.wgSize,
+				            params.ntypes, params.nposes,
+				            params.natlig, params.natpro,
+				            protein.get_access<R>(h),
+				            ligand.get_access<R>(h),
+				            transforms_0.get_access<R>(h),
+				            transforms_1.get_access<R>(h),
+				            transforms_2.get_access<R>(h),
+				            transforms_3.get_access<R>(h),
+				            transforms_4.get_access<R>(h),
+				            transforms_5.get_access<R>(h),
+				            forcefield.get_access<R>(h),
+				            results.get_access<RW>(h)
+				);
+			});
 		}
+
 	}
+
 
 	auto end = std::chrono::high_resolution_clock::now();
 
-	printTimings(params, start, end, PPWI);
+	printTimings(params, start, end, params.posesPerWI);
 	return energies;
 }
 
@@ -218,7 +314,6 @@ int main(int argc, char *argv[]) {
 	auto args = std::vector<std::string>(argv + 1, argv + argc);
 	auto params = loadParameters(args);
 
-	std::cout << "Workgroup Size: " << WGSIZE << std::endl;
 	std::cout << "Parameters:\n" << params << std::endl;
 
 
@@ -228,7 +323,7 @@ int main(int argc, char *argv[]) {
 	FILE *output = fopen("energies.dat", "w+");
 	// Print some energies
 	printf("\nEnergies\n");
-	for (int i = 0; i < params.nposes; i++) {
+	for (size_t i = 0; i < params.nposes; i++) {
 		fprintf(output, "%7.2f\n", energies[i]);
 		if (i < 16)
 			printf("%7.2f\n", energies[i]);

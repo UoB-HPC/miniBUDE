@@ -35,6 +35,7 @@ Proceed with compiling:
     
     cmake3 --build build --target bude --config Release -j $(nproc)
 
+The binary can be found at `build/bude`.
 
 ### Target Architecture
 
@@ -52,14 +53,10 @@ This implementation includes a tunable block size similar to OpenCL workgroups.
 The default value is `64`, which is suitable for 512-bit vectors, e.g. in Skylake or A64FX, but higher values may sometimes be beneficial.
 For 128-bit vectors, `16` is a good choice.
 
-This parameter can be set using the `WGSIZE` parameter, as follows:
-
-```
--DCXX_EXTRA_FLAGS="-DWGSIZE=16 ... "
-```
+This parameter can be set at runtime, use `--help` to find out how the block size can be changed.
 
 ## Running
 
 This implementation has no special run-time options.
-The `-n` and `-i` parameters are available, and the number of threads should be set through the `OMP_NUM_THREADS` environment variable.
-Run `bude-openmp -h` for a help message.
+The `-n` and `-i` parameters are available.
+Run `bude -h` for a help message.
