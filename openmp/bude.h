@@ -7,12 +7,14 @@
 
 #define DEFAULT_ITERS  8
 #define DEFAULT_NPOSES 65536
+#define REF_NPOSES     65536
 
-#define DATA_DIR        "../data"
-#define FILE_LIGAND     DATA_DIR "/ligand.dat"
-#define FILE_PROTEIN    DATA_DIR "/protein.dat"
-#define FILE_FORCEFIELD DATA_DIR "/forcefield.dat"
-#define FILE_POSES      DATA_DIR "/poses.dat"
+#define DATA_DIR          "../data"
+#define FILE_LIGAND       DATA_DIR "/ligand.dat"
+#define FILE_PROTEIN      DATA_DIR "/protein.dat"
+#define FILE_FORCEFIELD   DATA_DIR "/forcefield.dat"
+#define FILE_POSES        DATA_DIR "/poses.dat"
+#define FILE_REF_ENERGIES DATA_DIR "/ref_energies.dat"
 
 typedef struct
 {

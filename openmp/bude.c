@@ -57,15 +57,34 @@ int main(int argc, char *argv[])
   printf("\nEnergies\n");
   for (int i = 0; i < params.nposes; i++)
   {
-    fprintf(output, "%7.2f\n", energiesOMP[i]);
+    fprintf(output, "%f\n", energiesOMP[i]);
     if (i < 16)
       printf("%7.2f\n", energiesOMP[i]);
   }
+  printf("\n");
 
   fclose(output);
 
-  free(energiesOMP);
+  // Validate energies
+  FILE* ref_energies = fopen(FILE_REF_ENERGIES, "r");
+  float e, diff, maxdiff = 0.0f;
+  size_t n_ref_poses = params.nposes;
+  if (params.nposes > REF_NPOSES) {
+    printf("Only validating the first %d poses.\n", REF_NPOSES);
+    n_ref_poses = REF_NPOSES;
+  }
 
+  for (size_t i = 0; i < n_ref_poses; i++)
+  {
+    fscanf(ref_energies, "%f", &e);
+    diff = fabs(energiesOMP[i] - e) / e;
+    if (diff > maxdiff)
+      maxdiff = diff;
+  }
+  printf("Largest difference was %.3f%%.\n\n", maxdiff); // Expect numbers to be accurate to 2 decimal places
+  fclose(ref_energies);
+
+  free(energiesOMP);
   freeParameters();
 }
 
