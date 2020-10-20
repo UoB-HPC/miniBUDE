@@ -1,6 +1,6 @@
 SHELL := bash
 .SHELLFLAGS := -eu -o pipefail -c
-.ONESHELL:
+# .ONESHELL: # This doesn't work on all systems. Disabling for now.
 .DELETE_ON_ERROR:
 
 MAKEFLAGS += --warn-undefined-variables --no-builtin-rules
@@ -8,7 +8,8 @@ MAKEFLAGS += --warn-undefined-variables --no-builtin-rules
 # -------
 
 ifndef COMPILER
-$(error COMPILER not set (use ARM, CLANG, CRAY, GNU, or INTEL))
+$(warning COMPILER not set (use ARM, CLANG, CRAY, GNU, or INTEL))
+COMPILER=GNU
 endif
 
 MACHINE = $(shell uname -m)
