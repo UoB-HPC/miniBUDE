@@ -77,11 +77,12 @@ int main(int argc, char *argv[])
   for (size_t i = 0; i < n_ref_poses; i++)
   {
     fscanf(ref_energies, "%f", &e);
-    diff = fabs(energiesOMP[i] - e) / e;
-    if (diff > maxdiff)
-      maxdiff = diff;
+    if (fabs(e < 1.f)) continue;
+
+    diff = fabs(e - energiesOMP[i]) / e;
+    if (diff > maxdiff) maxdiff = diff;
   }
-  printf("Largest difference was %.3f%%.\n\n", maxdiff); // Expect numbers to be accurate to 2 decimal places
+  printf("Largest difference was %.3f%%.\n\n", 100*maxdiff); // Expect numbers to be accurate to 2 decimal places
   fclose(ref_energies);
 
   free(energiesOMP);
