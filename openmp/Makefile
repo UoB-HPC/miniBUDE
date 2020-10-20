@@ -46,7 +46,7 @@ LDFLAGS = -lm
 
 # -------
 
-EXE = bude-openmp
+EXE = bude
 
 .PHONY: all $(EXE) clean
 
