@@ -1,0 +1,8 @@
+The code in this repository has been developed, optimised, improved, and maintained over many years through the collective effort of the University of Bristol HPC Group.
+
+Thank you for your contributions (in alphabetical order) to:
+  Andrei Poenaru
+  James Price
+  Matt Martineau
+  Tom Deakin
+  Tom Lin
