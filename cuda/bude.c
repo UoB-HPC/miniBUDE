@@ -36,6 +36,8 @@ void runCUDA(float* results);
 int main(int argc, char *argv[])
 {
   loadParameters(argc, argv);
+  printf("\nPoses:      %d\n", params.nposes);
+  printf("Iterations: %d\n", params.iterations);
 
   float *resultsCUDA = malloc(params.nposes*sizeof(float));
   float *resultsRef = malloc(params.nposes*sizeof(float));

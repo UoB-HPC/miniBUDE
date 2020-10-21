@@ -45,6 +45,8 @@ void fasten_main(const int natlig,
 int main(int argc, char *argv[])
 {
   loadParameters(argc, argv);
+  printf("\nPoses:      %d\n", params.nposes);
+  printf("Iterations: %d\n", params.iterations);
 
   float *energiesOMP = calloc(params.nposes, sizeof(float));
 

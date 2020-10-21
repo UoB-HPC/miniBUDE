@@ -1,3 +1,11 @@
 bude
+bude_*
+bude-*
+
+*.o
 *.out
 energies.dat
+
+*.bak
+*.ori
+*.old

@@ -93,6 +93,9 @@ void     runOpenCL(float *energies);
 int main(int argc, char *argv[])
 {
   loadParameters(argc, argv);
+  printf("\nPoses:      %d\n", params.nposes);
+  printf("Iterations: %d\n", params.iterations);
+
   float maxdiff      = 0.0f;
   size_t n_ref_poses = params.nposes;
 
