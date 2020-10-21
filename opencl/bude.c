@@ -432,7 +432,7 @@ void loadParameters(int argc, char *argv[])
   params.run_omp    = 0;
   cl.wgsize         = 64;
   cl.posesPerWI     = 4;
-  int nposes        = 4096;
+  int nposes        = 65536;
 
   for (int i = 1; i < argc; i++)
   {
