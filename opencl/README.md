@@ -37,4 +37,4 @@ make COMPILER=GNU ARCH=thunderx2t99 WGSIZE=16
 ## Running
 
 The `-n` and `-i` parameters are available, along with several OpenCL-specific options for device selection and run-time tuning.
-Run `bude-opencl -h` for a list of all available flags.
+Run `bude -h` for a list of all available flags.
