@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
   for (size_t i = 0; i < n_ref_poses; i++)
   {
     fscanf(ref_energies, "%f", &e);
-    if (fabs(e < 1.f)) continue;
+    if (fabs(e) < 1.f) continue;
 
     diff = fabs(e - energiesOMP[i]) / e;
     if (diff > maxdiff) maxdiff = diff;
