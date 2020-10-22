@@ -330,5 +330,30 @@ int main(int argc, char *argv[]) {
 			printf("%7.2f\n", energies[i]);
 	}
 
+	// Validate energies
+	std::ifstream refEnergies(FILE_REF_ENERGIES);
+	size_t nRefPoses = params.nposes;
+	if (params.nposes > REF_NPOSES) {
+		std::cout << "Only validating the first " << REF_NPOSES << " poses.\n";
+		nRefPoses = REF_NPOSES;
+	}
+
+	std::string line;
+	float maxdiff = 0.0f;
+	for (size_t i = 0; i < nRefPoses; i++) {
+		if (!std::getline(refEnergies, line)) {
+			throw std::logic_error("ran out of ref energies lines to verify");
+		}
+		float e = std::stof(line);
+		if (std::fabs(e) < 1.f) continue;
+
+		float diff = std::fabs(e - energies[i]) / e;
+		if (diff > maxdiff) maxdiff = diff;
+	}
+	std::cout << "Largest difference was " <<
+	          std::setprecision(3) << (100 * maxdiff)
+	          << "%.\n\n"; // Expect numbers to be accurate to 2 decimal places
+	refEnergies.close();
+
 	fclose(output);
 }
