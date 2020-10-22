@@ -6,6 +6,8 @@ bude-*
 *.out
 energies.dat
 
+*.lst
+
 *.bak
 *.ori
 *.old
