@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
     if (i < 8)
       printf("%7.2f    vs   %7.2f  (%5.2f%%)\n", resultsRef[i], resultsOMP[i], 100*diff);
   }
-  printf("\nLargest difference was %.3f%%\n\n", maxdiff);
+  printf("\nLargest difference was %.3f%%\n\n", maxdiff*100);
 
   free(resultsOMP);
   free(resultsRef);
