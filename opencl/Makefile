@@ -12,7 +12,7 @@ endif
 
 # -------
 
-EXE = bude-opencl
+EXE = bude
 
 .PHONY: all $(EXE) clean
 

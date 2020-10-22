@@ -15,11 +15,14 @@
 #define MAX_DEVICES      32
 #define MAX_INFO_STRING 256
 
-#define DATA_DIR        "../data"
-#define FILE_LIGAND     DATA_DIR "/ligand.dat"
-#define FILE_PROTEIN    DATA_DIR "/protein.dat"
-#define FILE_FORCEFIELD DATA_DIR "/forcefield.dat"
-#define FILE_POSES      DATA_DIR "/poses.dat"
+#define DATA_DIR          "../data"
+#define FILE_LIGAND       DATA_DIR "/ligand.dat"
+#define FILE_PROTEIN      DATA_DIR "/protein.dat"
+#define FILE_FORCEFIELD   DATA_DIR "/forcefield.dat"
+#define FILE_POSES        DATA_DIR "/poses.dat"
+#define FILE_REF_ENERGIES DATA_DIR "/ref_energies.dat"
+
+#define REF_NPOSES 65536
 
 #define FILE_KERNEL     "budeMultiTD.cl"
 
@@ -57,6 +60,7 @@ struct
   float    *restrict poses[6];
 
   int iterations;
+  int run_omp;
 } params = {0};
 
 struct
@@ -89,22 +93,44 @@ void     runOpenCL(float *energies);
 int main(int argc, char *argv[])
 {
   loadParameters(argc, argv);
+  printf("\nPoses:      %d\n", params.nposes);
+  printf("Iterations: %d\n", params.iterations);
+
+  float maxdiff      = 0.0f;
+  size_t n_ref_poses = params.nposes;
 
   float *energiesOCL = malloc(params.nposes*sizeof(float));
   float *energiesOMP = malloc(params.nposes*sizeof(float));
 
-  runOpenMP(energiesOMP);
   runOpenCL(energiesOCL);
 
+  if (params.run_omp)
+    runOpenMP(energiesOMP);
+  else {
+    // Load reference results from file
+    FILE* ref_energies = fopen(FILE_REF_ENERGIES, "r");
+    if (params.nposes > REF_NPOSES) {
+      printf("Only validating the first %d poses.\n", REF_NPOSES);
+      n_ref_poses = REF_NPOSES;
+    }
+
+    for (size_t i = 0; i < n_ref_poses; i++)
+      fscanf(ref_energies, "%f", &energiesOMP[i]);
+
+    fclose(ref_energies);
+  }
+
+
   // Verify results
-  float maxdiff = 0;
-  printf("\n OpenMP      OpenCL   (diff)\n");
-  for (int i = 0; i < params.nposes; i++)
+  if (params.run_omp)
+    printf("\n OpenMP          OpenCL   (diff)\n");
+  else
+    printf("\n Reference       OpenCL   (diff)\n");
+
+  for (int i = 0; i < n_ref_poses; i++)
   {
     if (fabs(energiesOCL[i]) < 1.f)
-    {
       continue;
-    }
 
     float diff = fabs(energiesOMP[i] - energiesOCL[i]) / energiesOCL[i];
     if (diff > maxdiff)
@@ -112,10 +138,11 @@ int main(int argc, char *argv[])
 
     if (i < 8)
     {
-      printf("%7.2f  vs %7.2f  (%5.2f%%)\n",
-             energiesOMP[i], energiesOCL[i], 100*diff);
+      printf("%7.2f    vs   %7.2f  (%5.2f%%)\n",
+            energiesOMP[i], energiesOCL[i], 100*diff);
     }
   }
+
   printf("\nLargest difference was %.3f%%\n\n", maxdiff);
 
   free(energiesOCL);
@@ -405,9 +432,10 @@ void loadParameters(int argc, char *argv[])
 {
   // Defaults
   params.iterations = 8;
+  params.run_omp    = 0;
   cl.wgsize         = 64;
   cl.posesPerWI     = 4;
-  int nposes        = 4096;
+  int nposes        = 65536;
 
   for (int i = 1; i < argc; i++)
   {
@@ -476,6 +504,10 @@ void loadParameters(int argc, char *argv[])
         exit(1);
       }
     }
+    else if (!strcmp(argv[i], "--openmp"))
+    {
+      params.run_omp = 1;
+    }
     else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h"))
     {
       printf("\n");
@@ -488,6 +520,7 @@ void loadParameters(int argc, char *argv[])
       printf("  -n  --numposes   N       Compute energies for N poses\n");
       printf("  -p  --poserperwi PPWI    Compute PPWI poses per work-item\n");
       printf("  -w  --wgsize     WGSIZE  Run with work-group size WGSIZE\n");
+      printf("      --openmp             Validate results against a reference OpenMP implementation\n");
       printf("\n");
       exit(0);
     }

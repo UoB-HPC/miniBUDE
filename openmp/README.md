@@ -38,4 +38,4 @@ make COMPILER=GNU ARCH=thunderx2t99 WGSIZE=16
 
 This implementation has no special run-time options.
 The `-n` and `-i` parameters are available, and the number of threads should be set through the `OMP_NUM_THREADS` environment variable.
-Run `bude-openmp -h` for a help message.
+Run `bude -h` for a help message.

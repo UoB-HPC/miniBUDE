@@ -45,6 +45,8 @@ void fasten_main(const int natlig,
 int main(int argc, char *argv[])
 {
   loadParameters(argc, argv);
+  printf("\nPoses:      %d\n", params.nposes);
+  printf("Iterations: %d\n", params.iterations);
 
   float *energiesOMP = calloc(params.nposes, sizeof(float));
 
@@ -57,15 +59,35 @@ int main(int argc, char *argv[])
   printf("\nEnergies\n");
   for (int i = 0; i < params.nposes; i++)
   {
-    fprintf(output, "%7.2f\n", energiesOMP[i]);
+    fprintf(output, "%f\n", energiesOMP[i]);
     if (i < 16)
       printf("%7.2f\n", energiesOMP[i]);
   }
+  printf("\n");
 
   fclose(output);
 
-  free(energiesOMP);
+  // Validate energies
+  FILE* ref_energies = fopen(FILE_REF_ENERGIES, "r");
+  float e, diff, maxdiff = 0.0f;
+  size_t n_ref_poses = params.nposes;
+  if (params.nposes > REF_NPOSES) {
+    printf("Only validating the first %d poses.\n", REF_NPOSES);
+    n_ref_poses = REF_NPOSES;
+  }
 
+  for (size_t i = 0; i < n_ref_poses; i++)
+  {
+    fscanf(ref_energies, "%f", &e);
+    if (fabs(e < 1.f)) continue;
+
+    diff = fabs(e - energiesOMP[i]) / e;
+    if (diff > maxdiff) maxdiff = diff;
+  }
+  printf("Largest difference was %.3f%%.\n\n", 100*maxdiff); // Expect numbers to be accurate to 2 decimal places
+  fclose(ref_energies);
+
+  free(energiesOMP);
   freeParameters();
 }
 
