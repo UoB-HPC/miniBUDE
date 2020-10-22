@@ -58,11 +58,11 @@ int main(int argc, char *argv[])
 
   fclose(ref_energies);
 
-  float maxdiff = 0.0f;
+  float maxdiff = -100.0f;
   printf("\n Reference        CUDA   (diff)\n");
   for (int i = 0; i < n_ref_poses; i++)
   {
-    if (fabs(resultsCUDA[i]) < 1.f) continue;
+    if (fabs(resultsRef[i]) < 1.f && fabs(resultsCUDA[i]) < 1.f) continue;
 
     float diff = fabs(resultsRef[i] - resultsCUDA[i]) / resultsCUDA[i];
     if (diff > maxdiff) {

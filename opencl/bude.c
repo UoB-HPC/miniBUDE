@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
   printf("\nPoses:      %d\n", params.nposes);
   printf("Iterations: %d\n", params.iterations);
 
-  float maxdiff      = 0.0f;
+  float maxdiff      = -100.0f;
   size_t n_ref_poses = params.nposes;
 
   float *energiesOCL = malloc(params.nposes*sizeof(float));
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 
   for (int i = 0; i < n_ref_poses; i++)
   {
-    if (fabs(energiesOCL[i]) < 1.f)
+    if (fabs(energiesOMP[i]) < 1. && fabs(energiesOCL[i]) < 1.f)
       continue;
 
     float diff = fabs(energiesOMP[i] - energiesOCL[i]) / energiesOCL[i];

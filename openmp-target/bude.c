@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
   printf("\n Reference        OMP4   (diff)\n");
   for (int i = 0; i < n_ref_poses; i++)
   {
-    if (fabs(resultsOMP[i]) < 1.f) continue;
+    if (fabs(resultsRef[i]) < 1.f && fabs(resultsOMP[i]) < 1.f) continue;
 
     float diff = fabs(resultsRef[i] - resultsOMP[i]) / resultsOMP[i];
     if (diff > maxdiff)

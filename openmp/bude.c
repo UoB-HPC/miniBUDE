@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 
   // Validate energies
   FILE* ref_energies = fopen(FILE_REF_ENERGIES, "r");
-  float e, diff, maxdiff = 0.0f;
+  float e, diff, maxdiff = -100.0f;
   size_t n_ref_poses = params.nposes;
   if (params.nposes > REF_NPOSES) {
     printf("Only validating the first %d poses.\n", REF_NPOSES);
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
   for (size_t i = 0; i < n_ref_poses; i++)
   {
     fscanf(ref_energies, "%f", &e);
-    if (fabs(e) < 1.f) continue;
+    if (fabs(e) < 1.f && fabs(energiesOMP[i])< 1.f) continue;
 
     diff = fabs(e - energiesOMP[i]) / e;
     if (diff > maxdiff) maxdiff = diff;
