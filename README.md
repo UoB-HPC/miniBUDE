@@ -10,7 +10,10 @@ The top-level `data` directory contains the input common to implementations.
 Each other subdirectory contains a separate implementation:
 
 - [OpenMP](openmp/) for CPUs
+- [OpenMP target](openmp-target/) for GPUs
 - [OpenCL](opencl/) for GPUs
+- [CUDA](cuda/) for GPUs
+- [OpenACC](openacc/) for GPUs
 
 ## Building
 
