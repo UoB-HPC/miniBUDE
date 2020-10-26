@@ -348,7 +348,7 @@ int main(int argc, char *argv[]) {
 			throw std::logic_error("ran out of ref energies lines to verify");
 		}
 		float e = std::stof(line);
-		if (std::fabs(e) < 1.f) continue;
+		if (std::fabs(e) < 1.f && std::fabs(energies[i]) < 1.f) continue;
 
 		float diff = std::fabs(e - energies[i]) / e;
 		if (diff > maxdiff) maxdiff = diff;
