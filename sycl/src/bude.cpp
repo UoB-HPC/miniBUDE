@@ -220,7 +220,7 @@ Params loadParameters(const std::vector<std::string> &args) {
 			          << "  -h  --help               Print this message\n"
 			          << "  -i  --iterations I       Repeat kernel I times (default: " << DEFAULT_ITERS << ")\n"
 			          << "  -n  --numposes   N       Compute energies for N poses (default: " << DEFAULT_NPOSES << ")\n"
-			          << "  -p  --poserperwi PPWI    Compute PPWI poses per work-item (default: " << DEFAULT_PPWI << ")\n"
+//			          << "  -p  --poserperwi PPWI    Compute PPWI poses per work-item (default: " << DEFAULT_PPWI << ")\n"
 			          << "  -w  --wgsize     WGSIZE  Run with work-group size WGSIZE (default: " << DEFAULT_WGSIZE << ")\n"
 			          << "  -d  --device     INDEX   Select device at INDEX from output of --list(default: first device of the list)\n"
 			          << "  -l  --list               List available devices"
