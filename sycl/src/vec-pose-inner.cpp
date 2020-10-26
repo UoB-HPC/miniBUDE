@@ -18,7 +18,8 @@
 
 void fasten_main(
 		clsycl::handler &h,
-		size_t posesPerWI, size_t wgSize,
+//		size_t posesPerWI,
+		size_t wgSize,
 		size_t ntypes, size_t nposes,
 		size_t natlig, size_t natpro,
 		clsycl::accessor<Atom, 1, R, Global> protein_molecule,
@@ -36,14 +37,11 @@ void fasten_main(
 	constexpr const auto FloatMax = std::numeric_limits<float>::max();
 
 
-	size_t global = std::ceil((nposes) / static_cast<double> (posesPerWI));
+	size_t global = std::ceil((nposes) / static_cast<double> (NUM_TD_PER_THREAD));
 	global = wgSize * std::ceil(static_cast<double> (global) / wgSize);
 
 	clsycl::accessor<FFParams, 1, RW, Local> local_forcefield(clsycl::range<1>(ntypes), h);
 
-	clsycl::accessor<float, 2, RW, Local> etot(clsycl::range<2>(wgSize, posesPerWI), h);
-	clsycl::accessor<clsycl::float3, 2, RW, Local> lpos(clsycl::range<2>(wgSize, posesPerWI), h);
-	clsycl::accessor<clsycl::float4, 3, RW, Local> transform(clsycl::range<3>(wgSize, posesPerWI, 3), h);
 
 	h.parallel_for<class bude_kernel>(clsycl::nd_range<1>(global, wgSize), [=](clsycl::nd_item<1> item) {
 
@@ -51,9 +49,12 @@ void fasten_main(
 		const size_t gid = item.get_group(0);
 		const size_t lrange = item.get_local_range(0);
 
+		float etot[NUM_TD_PER_THREAD];
+		clsycl::float3 lpos[NUM_TD_PER_THREAD];
+		clsycl::float4 transform[NUM_TD_PER_THREAD][3];
 
-		size_t ix = gid * lrange * posesPerWI + lid;
-		ix = ix < nposes ? ix : nposes - posesPerWI;
+		size_t ix = gid * lrange * NUM_TD_PER_THREAD + lid;
+		ix = ix < nposes ? ix : nposes - NUM_TD_PER_THREAD;
 
 		// TODO async_work_group_copy takes only gentypes, so no FFParams,
 		//  casting *_ptr<ElementType> parameter requires first converting to void and then to gentype
@@ -65,7 +66,7 @@ void fasten_main(
 
 		// Compute transformation matrix to private memory
 		const size_t lsz = lrange;
-		for (size_t i = 0; i < posesPerWI; i++) {
+		for (size_t i = 0; i < NUM_TD_PER_THREAD; i++) {
 			size_t index = ix + i * lsz;
 
 			const float sx = clsycl::sin(transforms_0[index]);
@@ -75,20 +76,20 @@ void fasten_main(
 			const float sz = clsycl::sin(transforms_2[index]);
 			const float cz = clsycl::cos(transforms_2[index]);
 
-			transform[clsycl::id<3>(lid, i, 0)].x() = cy * cz;
-			transform[clsycl::id<3>(lid, i, 0)].y() = sx * sy * cz - cx * sz;
-			transform[clsycl::id<3>(lid, i, 0)].z() = cx * sy * cz + sx * sz;
-			transform[clsycl::id<3>(lid, i, 0)].w() = transforms_3[index];
-			transform[clsycl::id<3>(lid, i, 1)].x() = cy * sz;
-			transform[clsycl::id<3>(lid, i, 1)].y() = sx * sy * sz + cx * cz;
-			transform[clsycl::id<3>(lid, i, 1)].z() = cx * sy * sz - sx * cz;
-			transform[clsycl::id<3>(lid, i, 1)].w() = transforms_4[index];
-			transform[clsycl::id<3>(lid, i, 2)].x() = -sy;
-			transform[clsycl::id<3>(lid, i, 2)].y() = sx * cy;
-			transform[clsycl::id<3>(lid, i, 2)].z() = cx * cy;
-			transform[clsycl::id<3>(lid, i, 2)].w() = transforms_5[index];
+			transform[i][0].x() = cy * cz;
+			transform[i][0].y() = sx * sy * cz - cx * sz;
+			transform[i][0].z() = cx * sy * cz + sx * sz;
+			transform[i][0].w() = transforms_3[index];
+			transform[i][1].x() = cy * sz;
+			transform[i][1].y() = sx * sy * sz + cx * cz;
+			transform[i][1].z() = cx * sy * sz - sx * cz;
+			transform[i][1].w() = transforms_4[index];
+			transform[i][2].x() = -sy;
+			transform[i][2].y() = sx * cy;
+			transform[i][2].z() = cx * cy;
+			transform[i][2].w() = transforms_5[index];
 
-			etot[clsycl::id<2>(lid, i)] = ZERO;
+			etot[i] = ZERO;
 		}
 
 		item.wait_for(event);
@@ -103,24 +104,20 @@ void fasten_main(
 			const bool lhphb_gtz = l_params.hphb > ZERO;
 
 			const clsycl::float4 linitpos(l_atom.x, l_atom.y, l_atom.z, ONE);
-			for (size_t i = 0; i < posesPerWI; i++) {
-				const clsycl::id<2> id(lid, i);
-				const clsycl::id<3> i0(lid, i, 0);
-				const clsycl::id<3> i1(lid, i, 1);
-				const clsycl::id<3> i2(lid, i, 2);
+			for (size_t i = 0; i < NUM_TD_PER_THREAD; i++) {
 				// Transform ligand atom
-				lpos[id].x() = transform[i0].w() +
-				               linitpos.x() * transform[i0].x() +
-				               linitpos.y() * transform[i0].y() +
-				               linitpos.z() * transform[i0].z();
-				lpos[id].y() = transform[i1].w() +
-				               linitpos.x() * transform[i1].x() +
-				               linitpos.y() * transform[i1].y() +
-				               linitpos.z() * transform[i1].z();
-				lpos[id].z() = transform[i2].w() +
-				               linitpos.x() * transform[i2].x() +
-				               linitpos.y() * transform[i2].y() +
-				               linitpos.z() * transform[i2].z();
+				lpos[i].x() = transform[i][0].w() +
+				              linitpos.x() * transform[i][0].x() +
+				              linitpos.y() * transform[i][0].y() +
+				              linitpos.z() * transform[i][0].z();
+				lpos[i].y() = transform[i][1].w() +
+				              linitpos.x() * transform[i][1].x() +
+				              linitpos.y() * transform[i][1].y() +
+				              linitpos.z() * transform[i][1].z();
+				lpos[i].z() = transform[i][2].w() +
+				              linitpos.x() * transform[i][2].x() +
+				              linitpos.y() * transform[i][2].y() +
+				              linitpos.z() * transform[i][2].z();
 			}
 
 			// Loop over protein atoms
@@ -148,13 +145,11 @@ void fasten_main(
 				const float chrg_init = l_params.elsc * p_params.elsc;
 				const float dslv_init = p_hphb + l_hphb;
 
-				for (size_t i = 0; i < posesPerWI; i++) {
-					const clsycl::id<2> id(lid, i);
+				for (size_t i = 0; i < NUM_TD_PER_THREAD; i++) {
 					// Calculate distance between atoms
-
-					const float x = lpos[id].x() - p_atom.x;
-					const float y = lpos[id].y() - p_atom.y;
-					const float z = lpos[id].z() - p_atom.z;
+					const float x = lpos[i].x() - p_atom.x;
+					const float y = lpos[i].y() - p_atom.y;
+					const float z = lpos[i].z() - p_atom.z;
 					const float distij = clsycl::native::sqrt(x * x + y * y + z * z);
 
 					//TODO replace with:
@@ -165,29 +160,29 @@ void fasten_main(
 					const bool zone1 = (distbb < ZERO);
 
 					// Calculate steric energy
-					etot[id] += (ONE - (distij * r_radij)) * (zone1 ? 2 * HARDNESS : ZERO);
+					etot[i] += (ONE - (distij * r_radij)) * (zone1 ? 2 * HARDNESS : ZERO);
 
 					// Calculate formal and dipole charge interactions
 					float chrg_e = chrg_init * ((zone1 ? 1 : (ONE - distbb * elcdst1)) * (distbb < elcdst ? 1 : ZERO));
 					const float neg_chrg_e = -clsycl::fabs(chrg_e);
 					chrg_e = type_E ? neg_chrg_e : chrg_e;
-					etot[id] += chrg_e * CNSTNT;
+					etot[i] += chrg_e * CNSTNT;
 
 					// Calculate the two cases for Nonpolar-Polar repulsive interactions
 					const float coeff = (ONE - (distbb * r_distdslv));
 					float dslv_e = dslv_init * ((distbb < distdslv && phphb_nz) ? 1 : ZERO);
 					dslv_e *= (zone1 ? 1 : coeff);
-					etot[id] += dslv_e;
+					etot[i] += dslv_e;
 				}
 			} while (++ip < natpro); // loop over protein atoms
 		} while (++il < natlig); // loop over ligand atoms
 
 		// Write results
-		const size_t td_base = gid * lrange * posesPerWI + lid;
+		const size_t td_base = gid * lrange * NUM_TD_PER_THREAD + lid;
 
 		if (td_base < nposes) {
-			for (size_t i = 0; i < posesPerWI; i++) {
-				etotals[td_base + i * lrange] = etot[clsycl::id<2>(lid, i)] * HALF;
+			for (size_t i = 0; i < NUM_TD_PER_THREAD; i++) {
+				etotals[td_base + i * lrange] = etot[i] * HALF;
 			}
 		}
 

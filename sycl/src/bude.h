@@ -6,11 +6,16 @@
 #include <CL/sycl.hpp>
 
 
+
 #ifndef DEFAULT_PPWI
 #define DEFAULT_PPWI 1
 #endif
 #ifndef DEFAULT_WGSIZE
 #define DEFAULT_WGSIZE 4
+#endif
+
+#ifndef NUM_TD_PER_THREAD
+#define NUM_TD_PER_THREAD DEFAULT_PPWI
 #endif
 
 #define DEFAULT_ITERS  8

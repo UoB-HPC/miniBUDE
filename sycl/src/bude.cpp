@@ -26,7 +26,8 @@ struct Params {
 
 	size_t iterations;
 
-	size_t posesPerWI;
+	// XXX bring this back once all SYCL implementations implement 2020 spec
+//	size_t posesPerWI;
 	size_t wgSize;
 
 	clsycl::device device;
@@ -38,7 +39,7 @@ struct Params {
 		   "ntypes:      " << params.ntypes << "\n" <<
 		   "nposes:      " << params.nposes << "\n" <<
 		   "iterations:  " << params.iterations << "\n" <<
-		   "posesPerWI:  " << params.posesPerWI << "\n" <<
+		   "posesPerWI:  " << NUM_TD_PER_THREAD << "\n" <<
 		   "wgSize:      " << params.wgSize << "\n" <<
 		   "SYCL device: " << params.device.get_info<clsycl::info::device::name>();
 		return os;
@@ -47,7 +48,8 @@ struct Params {
 
 void fasten_main(
 		clsycl::handler &h,
-		size_t posesPerWI, size_t wgSize,
+//		size_t posesPerWI,
+		size_t wgSize,
 		size_t ntypes, size_t nposes,
 		size_t natlig, size_t natpro,
 		clsycl::accessor<Atom, 1, R, Global> protein_molecule,
@@ -142,7 +144,7 @@ Params loadParameters(const std::vector<std::string> &args) {
 	params.iterations = DEFAULT_ITERS;
 	params.nposes = DEFAULT_NPOSES;
 	params.wgSize = DEFAULT_WGSIZE;
-	params.posesPerWI = DEFAULT_PPWI;
+//	params.posesPerWI = DEFAULT_PPWI;
 
 	const auto readParam = [&args](size_t &current,
 	                               const std::string &arg,
@@ -195,7 +197,7 @@ Params loadParameters(const std::vector<std::string> &args) {
 		const auto arg = args[i];
 		if (readParam(i, arg, {"--iterations", "-i"}, std::bind(bindInt, _1, std::ref(params.iterations), "iterations"))) continue;
 		if (readParam(i, arg, {"--numposes", "-n"}, std::bind(bindInt, _1, std::ref(params.nposes), "numposes"))) continue;
-		if (readParam(i, arg, {"--posesperwi", "-p"}, std::bind(bindInt, _1, std::ref(params.posesPerWI), "posesperwi"))) continue;
+//		if (readParam(i, arg, {"--posesperwi", "-p"}, std::bind(bindInt, _1, std::ref(params.posesPerWI), "posesperwi"))) continue;
 		if (readParam(i, arg, {"--wgsize", "-w"}, std::bind(bindInt, _1, std::ref(params.wgSize), "wgsize"))) continue;
 		if (readParam(i, arg, {"--device", "-d"}, [&](const std::string &param) {
 			try { params.device = clsycl::device::get_devices().at(std::stoul(param)); }
@@ -284,7 +286,8 @@ std::vector<float> runKernel(Params params) {
 		for (size_t i = 0; i < params.iterations; ++i) {
 			queue.submit([&](clsycl::handler &h) {
 				fasten_main(h,
-				            params.posesPerWI, params.wgSize,
+//				            params.posesPerWI,
+				            params.wgSize,
 				            params.ntypes, params.nposes,
 				            params.natlig, params.natpro,
 				            protein.get_access<R>(h),
@@ -306,7 +309,7 @@ std::vector<float> runKernel(Params params) {
 
 	auto end = std::chrono::high_resolution_clock::now();
 
-	printTimings(params, start, end, params.posesPerWI);
+	printTimings(params, start, end, NUM_TD_PER_THREAD);
 	return energies;
 }
 

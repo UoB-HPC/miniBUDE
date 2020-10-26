@@ -65,6 +65,18 @@ target_compile_options(bude
         ${EXTRA_FLAGS}
         )
 
+
+if (NOT DEFINED NUM_TD_PER_THREAD)
+    message(STATUS "NUM_TD_PER_THREAD unspecified, defaulting to 1")
+    set(NUM_TD_PER_THREAD 1)
+endif ()
+
+if (NOT NUM_TD_PER_THREAD MATCHES "^[0-9]+$")
+    message(FATAL_ERROR "NUM_TD_PER_THREAD must be an integer, got ${NUM_TD_PER_THREAD}")
+endif ()
+
+add_definitions(-DNUM_TD_PER_THREAD=${NUM_TD_PER_THREAD})
+
 set(DEBUG_OPTIONS -O2 -fno-omit-frame-pointer ${CXX_EXTRA_FLAGS})
 set(RELEASE_OPTIONS -Ofast -ffast-math -march=native ${CXX_EXTRA_FLAGS})
 
