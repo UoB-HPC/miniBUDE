@@ -7,6 +7,7 @@ Increasing the iteration count has similar performance effects to docking multip
 ## Structure
 
 The top-level `data` directory contains the input common to implementations.
+The top-level `makedeck` directory contains an input deck generation program and a set of mol2/bhff input files.
 Each other subdirectory contains a separate implementation:
 
 - [OpenMP](openmp/) for CPUs
