@@ -17,8 +17,9 @@ struct
   Atom     *restrict ligand;
   FFParams *restrict forcefield;
   float    *restrict poses[6];
-
+  char     *deckDir;
   int iterations;
+
 } params = {0};
 
 double   getTimestamp();
@@ -42,6 +43,28 @@ void fasten_main(const int natlig,
                  const FFParams *restrict forcefield,
                  const int group);
 
+FILE* openFile(const char *parent, const char *child, 
+               const char* mode, long *length)
+{
+  char name[strlen(parent) + strlen(child) + 1];
+  strcpy(name, parent); 
+  strcat(name, child); 
+ 
+  FILE *file = NULL;
+  if (!(file = fopen(name, mode)))
+  {
+    fprintf(stderr, "Failed to open '%s'\n", name);
+    exit(1);
+  }
+  if(length){
+    fseek(file, 0, SEEK_END);
+    *length = ftell(file);
+    rewind(file);
+  }
+  return file;
+}
+
+
 int main(int argc, char *argv[])
 {
   loadParameters(argc, argv);
@@ -52,23 +75,8 @@ int main(int argc, char *argv[])
 
   runOpenMP(energiesOMP);
 
-
-  FILE *output = fopen("energies.dat", "w");
-
-  // Print some energies
-  printf("\nEnergies\n");
-  for (int i = 0; i < params.nposes; i++)
-  {
-    fprintf(output, "%f\n", energiesOMP[i]);
-    if (i < 16)
-      printf("%7.2f\n", energiesOMP[i]);
-  }
-  printf("\n");
-
-  fclose(output);
-
   // Validate energies
-  FILE* ref_energies = fopen(FILE_REF_ENERGIES, "r");
+  FILE* ref_energies = openFile(params.deckDir, FILE_REF_ENERGIES, "r", NULL);
   float e, diff, maxdiff = -100.0f;
   size_t n_ref_poses = params.nposes;
   if (params.nposes > REF_NPOSES) {
@@ -115,22 +123,6 @@ void runOpenMP(float *restrict results)
   printTimings(start, end, PPWI);
 }
 
-FILE* openFile(const char *name, long *length)
-{
-  FILE *file = NULL;
-  if (!(file = fopen(name, "rb")))
-  {
-    fprintf(stderr, "Failed to open '%s'\n", name);
-    exit(1);
-  }
-
-  fseek(file, 0, SEEK_END);
-  *length = ftell(file);
-  rewind(file);
-
-  return file;
-}
-
 int parseInt(const char *str)
 {
   char *next;
@@ -141,6 +133,7 @@ int parseInt(const char *str)
 void loadParameters(int argc, char *argv[])
 {
   // Defaults
+  params.deckDir = DATA_DIR;
   params.iterations = DEFAULT_ITERS;
   int nposes        = DEFAULT_NPOSES;
 
@@ -170,8 +163,18 @@ void loadParameters(int argc, char *argv[])
       printf("  -h  --help               Print this message\n");
       printf("  -i  --iterations I       Repeat kernel I times (default: %d)\n", DEFAULT_ITERS);
       printf("  -n  --numposes   N       Compute energies for N poses (default: %d)\n", DEFAULT_NPOSES);
+      printf("      --deck       DECK    Use the DECK directory as input deck (default: %s)\n", DATA_DIR);
       printf("\n");
       exit(0);
+    }
+    else if (!strcmp(argv[i], "--deck"))
+    {
+      if (++i >= argc)
+      {
+        printf("Invalid deck\n");
+        exit(1);
+      }
+      params.deckDir = argv[i];
     }
     else
     {
@@ -183,25 +186,25 @@ void loadParameters(int argc, char *argv[])
   FILE *file = NULL;
   long length;
 
-  file = openFile(FILE_LIGAND, &length);
+  file = openFile(params.deckDir, FILE_LIGAND, "rb", &length);
   params.natlig = length / sizeof(Atom);
   params.ligand = malloc(params.natlig*sizeof(Atom));
   fread(params.ligand, sizeof(Atom), params.natlig, file);
   fclose(file);
 
-  file = openFile(FILE_PROTEIN, &length);
+  file = openFile(params.deckDir, FILE_PROTEIN, "rb", &length);
   params.natpro = length / sizeof(Atom);
   params.protein = malloc(params.natpro*sizeof(Atom));
   fread(params.protein, sizeof(Atom), params.natpro, file);
   fclose(file);
 
-  file = openFile(FILE_FORCEFIELD, &length);
+  file = openFile(params.deckDir, FILE_FORCEFIELD, "rb", &length);
   params.ntypes = length / sizeof(FFParams);
   params.forcefield = malloc(params.ntypes*sizeof(FFParams));
   fread(params.forcefield, sizeof(FFParams), params.ntypes, file);
   fclose(file);
 
-  file = openFile(FILE_POSES, &length);
+  file = openFile(params.deckDir, FILE_POSES, "rb", &length);
   for (int i = 0; i < 6; i++)
     params.poses[i] = malloc(nposes*sizeof(float));
 

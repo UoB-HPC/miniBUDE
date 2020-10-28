@@ -40,6 +40,7 @@ typedef struct
     Atom     * ligand;
     FFParams * forcefield;
     float    * poses[6];
+    char     * deckDir;
     int iterations;
 } Params;
 
