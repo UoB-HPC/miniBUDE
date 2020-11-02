@@ -12,8 +12,8 @@ set(ENABLE_ASAN OFF)
 find_package(OpenMP)
 
 add_executable(makedeck
-        bude.cpp
-        kernel.cpp
+        make-bude-input.cpp
+        make-bude-kernel.cpp
         main.cpp
         )
 
@@ -54,8 +54,8 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(Catch2)
 
 add_executable(tests
-        bude.cpp
-        kernel.cpp
+        make-bude-input.cpp
+        make-bude-kernel.cpp
         test-bude.cpp
         test-main.cpp)
 target_link_libraries(tests Catch2::Catch2)

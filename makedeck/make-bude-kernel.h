@@ -1,6 +1,6 @@
 #pragma once
 
-#include "bude.h"
+#include "make-bude-input.h"
 
 #include <vector>
 

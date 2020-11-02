@@ -1,5 +1,5 @@
 #include "catch2/catch.hpp"
-#include "bude.h"
+#include "make-bude-input.h"
 
 #include <filesystem>
 #include <variant>
