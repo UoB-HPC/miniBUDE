@@ -29,6 +29,7 @@ struct Params {
 	// XXX bring this back once all SYCL implementations implement 2020 spec
 //	size_t posesPerWI;
 	size_t wgSize;
+	std::string deckDir;
 
 	clsycl::device device;
 
@@ -144,6 +145,7 @@ Params loadParameters(const std::vector<std::string> &args) {
 	params.iterations = DEFAULT_ITERS;
 	params.nposes = DEFAULT_NPOSES;
 	params.wgSize = DEFAULT_WGSIZE;
+	params.deckDir = DATA_DIR;
 //	params.posesPerWI = DEFAULT_PPWI;
 
 	const auto readParam = [&args](size_t &current,
@@ -207,6 +209,8 @@ Params loadParameters(const std::vector<std::string> &args) {
 				std::exit(EXIT_FAILURE);
 			}
 		})) { continue; }
+		if (readParam(i, arg, {"--deck"}, [&](const std::string &param) { params.deckDir = param; })) continue;
+
 
 		if (arg == "--list" || arg == "-l") {
 			for (size_t j = 0; j < devices.size(); ++j) printSimple(devices[j], j);
@@ -222,7 +226,8 @@ Params loadParameters(const std::vector<std::string> &args) {
 			          << "  -n  --numposes   N       Compute energies for N poses (default: " << DEFAULT_NPOSES << ")\n"
 //			          << "  -p  --poserperwi PPWI    Compute PPWI poses per work-item (default: " << DEFAULT_PPWI << ")\n"
 			          << "  -w  --wgsize     WGSIZE  Run with work-group size WGSIZE (default: " << DEFAULT_WGSIZE << ")\n"
-			          << "  -d  --device     INDEX   Select device at INDEX from output of --list(default: first device of the list)\n"
+			          << "  -d  --device     INDEX   Select device at INDEX from output of --list (default: first device of the list)\n"
+			          << "      --deck       DECK     Use the DECK directory as input deck (default: " << DATA_DIR << ")"
 			          << "  -l  --list               List available devices"
 			          << std::endl;
 			std::exit(EXIT_SUCCESS);
@@ -232,16 +237,16 @@ Params loadParameters(const std::vector<std::string> &args) {
 		std::exit(EXIT_FAILURE);
 	}
 
-	params.ligand = readNStruct<Atom>(FILE_LIGAND);
+	params.ligand = readNStruct<Atom>(params.deckDir + FILE_LIGAND);
 	params.natlig = params.ligand.size();
 
-	params.protein = readNStruct<Atom>(FILE_PROTEIN);
+	params.protein = readNStruct<Atom>(params.deckDir + FILE_PROTEIN);
 	params.natpro = params.protein.size();
 
-	params.forcefield = readNStruct<FFParams>(FILE_FORCEFIELD);
+	params.forcefield = readNStruct<FFParams>(params.deckDir + FILE_FORCEFIELD);
 	params.ntypes = params.forcefield.size();
 
-	auto poses = readNStruct<float>(FILE_POSES);
+	auto poses = readNStruct<float>(params.deckDir + FILE_POSES);
 	if (poses.size() / 6 != params.nposes) {
 		throw std::invalid_argument("Bad poses: " + std::to_string(poses.size()));
 	}
@@ -259,8 +264,6 @@ Params loadParameters(const std::vector<std::string> &args) {
 }
 
 std::vector<float> runKernel(Params params) {
-
-	printf("\nRunning C/OpenMP\n");
 
 	std::vector<float> energies(params.nposes);
 
@@ -318,13 +321,18 @@ int main(int argc, char *argv[]) {
 	auto args = std::vector<std::string>(argv + 1, argv + argc);
 	auto params = loadParameters(args);
 
-	std::cout << "Parameters:\n" << params << std::endl;
-
+//	std::cout << "Parameters:\n" << params << std::endl;
+	std::cout << "Device    : " << params.device.get_info<clsycl::info::device::name>() << std::endl;
+	std::cout << "Poses     : " << params.nposes << std::endl;
+	std::cout << "Iterations: " << params.iterations << std::endl;
+	std::cout << "Ligands   : " << params.natlig << std::endl;
+	std::cout << "Proteins  : " << params.natpro << std::endl;
+	std::cout << "Deck      : " << params.deckDir << std::endl;
 
 	auto energies = runKernel(params);
 
 	//XXX Keep the output format consistent with the C impl. so no fancy streams here
-	FILE *output = fopen("energies.dat", "w+");
+	FILE *output = fopen("energies.out", "w+");
 	// Print some energies
 	printf("\nEnergies\n");
 	for (size_t i = 0; i < params.nposes; i++) {
@@ -334,7 +342,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Validate energies
-	std::ifstream refEnergies(FILE_REF_ENERGIES);
+	std::ifstream refEnergies(params.deckDir + FILE_REF_ENERGIES);
 	size_t nRefPoses = params.nposes;
 	if (params.nposes > REF_NPOSES) {
 		std::cout << "Only validating the first " << REF_NPOSES << " poses.\n";
