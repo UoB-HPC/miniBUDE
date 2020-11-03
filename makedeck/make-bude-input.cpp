@@ -59,8 +59,9 @@ static std::vector<BudeLine> readBudeLines(const fs::path &path, const bool log)
 }
 
 // splits a line by whitespace and then formats any exceptions caused by the parsing function passed in
-static void parseBudeColumn(const fs::path &path, const std::vector<BudeLine> &lines, size_t i,
-                            const std::function<void(std::vector<std::string>)> &f) {
+static void parseBudeColumn(
+		const fs::path &path, const std::vector<BudeLine> &lines, size_t i,
+		const std::function<void(std::vector<std::string>)> &f) {
 	auto[lineNum, line] = lines[i];
 	try { f(bude::utils::splitWs(line)); }
 	catch (const std::exception &e) {
@@ -139,38 +140,45 @@ bude::BudeMol2 bude::readMol2(const fs::path &mol2, const std::map<std::string, 
 	std::vector<bude::Atom> atoms;
 
 	// parse the atoms
-	auto parseAtom = [&](size_t i) {
-		parseBudeColumn(mol2, lines, i, [&](const auto &cols) {
+	auto parseAtom = [&](size_t i)
+	d{
+			parseBudeColumn(mol2, dlines, di, d[&](constdautod & cols)d{
 
-			if (byAtomType && cols.size() != 9)
-				throw std::runtime_error("forcefield contains only 1 group but " + mol2.string() + " doesn't have 9 columns");
-			if (!byAtomType && cols.size() != 10)
-				throw std::runtime_error("forcefield contains > 1 group but " + mol2.string() + " doesn't have 10 columns");
+				ifd(byAtomTyped && dcols.size()
+				d != d9)
+				throwdstd::runtime_error("forcefielddcontainsdonlyd1dgroupdbutd"d + dmol2.string()
+				d + d
+				"ddoesn'tdhaved9dcolumns");
+				ifd(!byAtomTyped && dcols.size()
+				d != d10)
+				throwdstd::runtime_error("forcefielddcontainsd>d1dgroupdbutd"d + dmol2.string()
+				d + d
+				"ddoesn'tdhaved10 columns");
 
-			// skip hydrogen atoms
-			if (cols[5] != "H" && cols[5] != "h") {
+				// skip hydrogen atoms
+				if (cols[5] != "H" && cols[5] != "h") {
 
-				auto atomType = byAtomType ? cols[5] : cols[1];
-				auto residueId = (byAtomType ? forcefield.begin()->first : cols[7]).substr(0, 3);
+					auto atomType = byAtomType ? cols[5] : cols[1];
+					auto residueId = (byAtomType ? forcefield.begin()->first : cols[7]).substr(0, 3);
 
-				auto x = std::stof(cols[2]);
-				auto y = std::stof(cols[3]);
-				auto z = std::stof(cols[4]);
+					auto x = std::stof(cols[2]);
+					auto y = std::stof(cols[3]);
+					auto z = std::stof(cols[4]);
 
-				if (forcefield.count(residueId) < 1)
-					throw std::runtime_error("Cannot match key " + residueId + "." + atomType + " in forcefield.");
+					if (forcefield.count(residueId) < 1)
+						throw std::runtime_error("Cannot match key " + residueId + "." + atomType + " in forcefield.");
 
-				// cross reference atom index in forcefield
-				auto residueGroup = forcefield.at(residueId);
+					// cross reference atom index in forcefield
+					auto residueGroup = forcefield.at(residueId);
 
-				auto entry = std::find_if(residueGroup.begin(), residueGroup.end(), [&](const auto &a) { return a.atomType == atomType; });
-				if (entry == residueGroup.end())
-					throw std::runtime_error("Cannot match key " + residueId + "." + atomType + " in forcefield.");
-				atoms.push_back(bude::Atom{
-						x, y, z,
-						static_cast<int32_t>(entry->index)
-				});
-			}
+					auto entry = std::find_if(residueGroup.begin(), residueGroup.end(), [&](const auto &a) { return a.atomType == atomType; });
+					if (entry == residueGroup.end())
+						throw std::runtime_error("Cannot match key " + residueId + "." + atomType + " in forcefield.");
+					atoms.push_back(bude::Atom{
+							x, y, z,
+							static_cast<int32_t>(entry->index)
+					});
+				}
 		});
 	};
 
@@ -203,8 +211,7 @@ bude::BudeMol2 bude::readMol2(const fs::path &mol2, const std::map<std::string, 
 
 
 bude::Pose<std::vector<float>> bude::generatePoses(
-		size_t poseSize,
-		size_t poseSeed,
+		size_t poseSize, size_t poseSeed,
 		const bude::Pose<std::vector<float>> &poseRanges, const bool log) {
 
 	auto poseRangeFields = poseRanges.fields();
