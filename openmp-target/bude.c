@@ -11,11 +11,11 @@
 #define MAX_INFO_STRING 256
 
 #define DATA_DIR          "../data"
-#define FILE_LIGAND       "/ligand.dat"
-#define FILE_PROTEIN      "/protein.dat"
-#define FILE_FORCEFIELD   "/forcefield.dat"
-#define FILE_POSES        "/poses.dat"
-#define FILE_REF_ENERGIES "/ref_energies.txt"
+#define FILE_LIGAND       "/ligand.in"
+#define FILE_PROTEIN      "/protein.in"
+#define FILE_FORCEFIELD   "/forcefield.in"
+#define FILE_POSES        "/poses.in"
+#define FILE_REF_ENERGIES "/ref_energies.out"
 
 #define REF_NPOSES 65536
 
@@ -59,7 +59,9 @@ int main(int argc, char *argv[])
   loadParameters(argc, argv);
   printf("\nPoses:      %d\n", params.nposes);
   printf("Iterations: %d\n", params.iterations);
-
+  printf("Ligands   : %d\n", params.natlig);
+  printf("Proteins  : %d\n", params.natpro);
+  printf("Deck      : %s\n", params.deckDir);
   float *resultsOMP = malloc(params.nposes*sizeof(float));
   float *resultsRef = malloc(params.nposes*sizeof(float));
 

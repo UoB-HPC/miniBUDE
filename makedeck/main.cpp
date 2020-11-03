@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
 			          << "  -l  --ligand       Path to a ligand mol2 file\n"
 			          << "  -s  --pose-seed    The random seed used to generate pose combinations (default: " << DEFAULT_POSE_SEED << ")\n"
 			          << "  -n  --pose-length  The amount of poses to generate (default: " << DEFAULT_POSE_SIZE << ")\n"
-			          << "  -o  --out          The output directory (containing {protein,ligand,forcefield,poses}.dat,{input,energies}.txt) name of the decks\n"
+			          << "  -o  --out          The output directory (containing {protein,ligand,forcefield,poses}.in,params.txt,energies.out) name of the decks\n"
 			          << "      --force        If specified, any file/directory that matches the output dir name will be deleted/overwritten\n"
 			          << std::endl;
 			std::exit(EXIT_SUCCESS);
@@ -159,11 +159,11 @@ int main(int argc, char *argv[]) {
 	auto protein = bude::readMol2(config.proteinMol2, forcefield);
 	auto ligand = bude::readMol2(config.ligandMol2, forcefield);
 
-	bude::utils::writeNStruct(config.deckDir / "forcefield.dat", ffParams);
-	bude::utils::writeNStruct(config.deckDir / "protein.dat", protein.first);
-	bude::utils::writeNStruct(config.deckDir / "ligand.dat", ligand.first);
+	bude::utils::writeNStruct(config.deckDir / "forcefield.in", ffParams);
+	bude::utils::writeNStruct(config.deckDir / "protein.in", protein.first);
+	bude::utils::writeNStruct(config.deckDir / "ligand.in", ligand.first);
 
-	auto posesPath = config.deckDir / "poses.dat";
+	auto posesPath = config.deckDir / "poses.in";
 	auto poses = bude::generatePoses(config.poseSize, config.poseSeed, config.poseRanges);
 	for (const auto &f : poses.fields()) bude::utils::writeNStruct(posesPath, f);
 
@@ -172,23 +172,23 @@ int main(int argc, char *argv[]) {
 	std::cout << "Launching kernel ..." << std::endl;
 	auto kernelStart = std::chrono::high_resolution_clock::now();
 	size_t completed = 0;
-	size_t max = (config.poseSize / WGSIZE);
-	#pragma omp parallel for default(none) shared(ligand, protein, ffParams, poses, energies, max, completed, std::cout)
-	for (size_t group = 0; group < max; group++) {
+	size_t totalPoses = config.poseSize;
+	#pragma omp parallel for default(none) shared(ligand, protein, ffParams, poses, energies, totalPoses, completed, std::cout)
+	for (size_t pose = 0; pose < totalPoses; pose++) {
 		bude::kernel::fasten_main(
 				ligand.first.size(), protein.first.size(),
 				protein.first, ligand.first,
 				poses.tilt, poses.roll, poses.pan,
 				poses.xTrans, poses.yTrans, poses.zTrans,
-				energies, ffParams, group);
+				energies, ffParams, pose);
 		#pragma omp critical
 		{
 			completed++;
 			if (completed % 10 == 0) {
-				auto pct = static_cast<int>((static_cast<double>(completed) / max) * 100.0);
+				auto pct = static_cast<int>((static_cast<double>(completed) / totalPoses) * 100.0);
 				std::cout << "["
 				          << std::string(pct, '|') << std::string(100 - pct, ' ')
-				          << "] (" << max << "/" << completed << ") " << pct << "%\r" << std::flush;
+				          << "] (" << totalPoses << "/" << completed << ") " << pct << "%\r" << std::flush;
 			}
 		};
 	}
@@ -196,12 +196,12 @@ int main(int argc, char *argv[]) {
 	std::cout << std::endl;
 	std::cout << "Kernel completed" << std::endl;
 
-	std::ofstream reference(config.deckDir / "ref_energies.txt");
+	std::ofstream reference(config.deckDir / "ref_energies.out");
 	reference << std::fixed << std::setprecision(5);
 	for (const auto &e : energies) reference << e << "\n";
 	reference.close();
 
-	std::ofstream input(config.deckDir / "input.txt");
+	std::ofstream input(config.deckDir / "params.txt");
 	for (const auto &arg : args) input << arg << " ";
 	input << std::endl;
 

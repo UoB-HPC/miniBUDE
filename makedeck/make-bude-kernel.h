@@ -19,7 +19,7 @@ namespace bude::kernel {
 	                 const std::vector<float> &transforms_5,
 	                 std::vector<float> &results,
 	                 const std::vector <bude::FFParams> &forcefield,
-	                 int group);
+	                 int pose);
 
 
 }
