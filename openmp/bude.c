@@ -70,7 +70,9 @@ int main(int argc, char *argv[])
   loadParameters(argc, argv);
   printf("\nPoses:      %d\n", params.nposes);
   printf("Iterations: %d\n", params.iterations);
-
+  printf("Ligands   : %d\n", params.natlig);
+  printf("Proteins  : %d\n", params.natpro);
+  printf("Deck      : %s\n", params.deckDir);
   float *energiesOMP = calloc(params.nposes, sizeof(float));
 
   runOpenMP(energiesOMP);
