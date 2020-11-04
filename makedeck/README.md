@@ -1,22 +1,23 @@
 # BUDE makedeck
 
-This program generates input decks for the BUDE miniapp from a set of mol2 and bhff files.
+This program generates input decks for the BUDE benchmark from a set of mol2 and bhff files.
 
 ## Building
 
-The program uses CMake and requires a C++17 conformant compiler with OpenMP support and the appropriate C++17 standard library.
+The program uses CMake and requires a C++17-conformant compiler with OpenMP support and the appropriate C++17 standard library.
+For GCC, the first version supported is 9.3.0.
 
 First, generate a build:
 
     cmake -Bbuild -H. -DCMAKE_BUILD_TYPE=Release
 
 And then proceed with compilation:
-    
-    cmake --build build --target makedeck --config Release
-    
-The binary will be located at `build/makedeck`.    
 
- 
+    cmake --build build --target makedeck --config Release
+
+The binary will be located at `build/makedeck`.
+
+
 ## Running
 
 To generate an input deck, simply specify all the required parameters as described in `--help`:
@@ -46,27 +47,27 @@ The deck will be created in a directory named `output`.
 It should contain the following files:
 
 ```
-forcefield.dat
-ligand.dat
-poses.dat
-protein.dat
-input.txt # contains original program arguments used to generate this deck
-ref_energies.txt # contains reference energies used for verification
-``` 
+forcefield.in
+ligand.in
+poses.in
+protein.in
+params.txt # contains original program arguments used to generate this deck
+ref_energies.out # contains reference energies used for verification
+```
 
 The input deck directory can then be specified in all BUDE implementations:
 
     ./bude --deck output
-    
+
 ## Testing
 
-This project contains unit tests. 
+This project contains unit tests.
 First, create a debug build:
 
     cmake -Bbuild -H. -DCMAKE_BUILD_TYPE=Debug
 
 And then proceed with compilation:
-    
+
     cmake --build build --target tests --config Debug
-    
-And then run the test binary `build/tests`.    
+
+And then run the test binary `build/tests`.
