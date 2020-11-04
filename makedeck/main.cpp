@@ -6,8 +6,8 @@
 #include <iterator>
 #include <cmath>
 
-#include "make-bude-input.h"
-#include "make-bude-kernel.h"
+#include "input-utils.h"
+#include "ref-kernel.h"
 
 const std::vector<float> DEFAULT_DEGS{
 		-170.f, -160.f, -150.f, -140.f, -130.f, -120.f, -110.f, -100.f, -90.f, -80.f, -70.f, -60.f, -50.f, -40.f, -30.f, -20.f, -10.f,
