@@ -7,6 +7,7 @@ Increasing the iteration count has similar performance effects to docking multip
 ## Structure
 
 The top-level `data` directory contains the input common to implementations.
+The top-level `makedeck` directory contains an input deck generation program and a set of mol2/bhff input files.
 Each other subdirectory contains a separate implementation:
 
 - [OpenMP](openmp/) for CPUs
@@ -26,6 +27,7 @@ Refer to each implementation's README for further build instructions.
 
 To run with the default options, run the binary without any flags.
 To adjust the run time, use `-i` to set the number of iterations.
-For very short runs, e.g. for simulation, use set `-n 1024` to reduce the number of poses.
+For very short runs, e.g. for simulation, use `-n 1024` to reduce the number of poses.
+The maximum number of poses supported is `65536`.
 
 Refer to each implementation's README for further run instructions.

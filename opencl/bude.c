@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 
 #if defined(__APPLE__)
   #include <OpenCL/OpenCL.h>
@@ -15,12 +16,12 @@
 #define MAX_DEVICES      32
 #define MAX_INFO_STRING 256
 
-#define DATA_DIR          "../data"
-#define FILE_LIGAND       DATA_DIR "/ligand.dat"
-#define FILE_PROTEIN      DATA_DIR "/protein.dat"
-#define FILE_FORCEFIELD   DATA_DIR "/forcefield.dat"
-#define FILE_POSES        DATA_DIR "/poses.dat"
-#define FILE_REF_ENERGIES DATA_DIR "/ref_energies.dat"
+#define DATA_DIR          "../data/bm1"
+#define FILE_LIGAND       "/ligand.in"
+#define FILE_PROTEIN      "/protein.in"
+#define FILE_FORCEFIELD   "/forcefield.in"
+#define FILE_POSES        "/poses.in"
+#define FILE_REF_ENERGIES "/ref_energies.out"
 
 #define REF_NPOSES 65536
 
@@ -74,6 +75,7 @@ struct
   int              deviceIndex;
   int              wgsize;
   int              posesPerWI;
+  char            *deckDir;
 } cl = {0};
 
 double   getTimestamp();
@@ -90,12 +92,36 @@ void     checkError(cl_int err, const char *op);
 void     runOpenMP(float *energies);
 void     runOpenCL(float *energies);
 
+FILE* openFile(const char *parent, const char *child,
+               const char* mode, long *length)
+{
+  char name[strlen(parent) + strlen(child) + 1];
+  strcpy(name, parent);
+  strcat(name, child);
+
+  FILE *file = NULL;
+  if (!(file = fopen(name, mode)))
+  {
+    fprintf(stderr, "Failed to open '%s'\n", name);
+    exit(1);
+  }
+  if(length){
+    fseek(file, 0, SEEK_END);
+    *length = ftell(file);
+    rewind(file);
+  }
+  return file;
+}
+
 int main(int argc, char *argv[])
 {
   loadParameters(argc, argv);
-  printf("\nPoses:      %d\n", params.nposes);
+  printf("\n");
+  printf("Poses     : %d\n", params.nposes);
   printf("Iterations: %d\n", params.iterations);
-
+  printf("Ligands   : %d\n", params.natlig);
+  printf("Proteins  : %d\n", params.natpro);
+  printf("Deck      : %s\n", cl.deckDir);
   float maxdiff      = -100.0f;
   size_t n_ref_poses = params.nposes;
 
@@ -108,7 +134,8 @@ int main(int argc, char *argv[])
     runOpenMP(energiesOMP);
   else {
     // Load reference results from file
-    FILE* ref_energies = fopen(FILE_REF_ENERGIES, "r");
+
+    FILE* ref_energies = openFile(cl.deckDir, FILE_REF_ENERGIES, "r", NULL);
     if (params.nposes > REF_NPOSES) {
       printf("Only validating the first %d poses.\n", REF_NPOSES);
       n_ref_poses = REF_NPOSES;
@@ -405,22 +432,6 @@ void runOpenCL(float *results)
   releaseCL();
 }
 
-FILE* openFile(const char *name, long *length)
-{
-  FILE *file = NULL;
-  if (!(file = fopen(name, "rb")))
-  {
-    fprintf(stderr, "Failed to open '%s'\n", name);
-    exit(1);
-  }
-
-  fseek(file, 0, SEEK_END);
-  *length = ftell(file);
-  rewind(file);
-
-  return file;
-}
-
 int parseInt(const char *str)
 {
   char *next;
@@ -435,6 +446,7 @@ void loadParameters(int argc, char *argv[])
   params.run_omp    = 0;
   cl.wgsize         = 64;
   cl.posesPerWI     = 4;
+  cl.deckDir        = DATA_DIR;
   int nposes        = 65536;
 
   for (int i = 1; i < argc; i++)
@@ -504,6 +516,15 @@ void loadParameters(int argc, char *argv[])
         exit(1);
       }
     }
+    else if (!strcmp(argv[i], "--deck"))
+    {
+      if (++i >= argc)
+      {
+        printf("Invalid deck\n");
+        exit(1);
+      }
+      cl.deckDir = argv[i];
+    }
     else if (!strcmp(argv[i], "--openmp"))
     {
       params.run_omp = 1;
@@ -515,11 +536,12 @@ void loadParameters(int argc, char *argv[])
       printf("Options:\n");
       printf("  -h  --help               Print this message\n");
       printf("      --list               List available devices\n");
-      printf("      --device     INDEX   Select device at INDEX\n");
+      printf("  -d  --device     INDEX   Select device at INDEX\n");
       printf("  -i  --iterations I       Repeat kernel I times\n");
       printf("  -n  --numposes   N       Compute energies for N poses\n");
       printf("  -p  --poserperwi PPWI    Compute PPWI poses per work-item\n");
       printf("  -w  --wgsize     WGSIZE  Run with work-group size WGSIZE\n");
+      printf("      --deck       DECK    Use the DECK directory as input deck\n");
       printf("      --openmp             Validate results against a reference OpenMP implementation\n");
       printf("\n");
       exit(0);
@@ -534,25 +556,32 @@ void loadParameters(int argc, char *argv[])
   FILE *file = NULL;
   long length;
 
-  file = openFile(FILE_LIGAND, &length);
+  struct stat s;
+  int e = stat(cl.deckDir, &s);
+  if(e == -1 || !S_ISDIR(s.st_mode)){
+    printf("Cannot stat or not a directory: %s\n", cl.deckDir);
+    exit(1);
+  }
+
+  file = openFile(cl.deckDir, FILE_LIGAND, "rb", &length);
   params.natlig = length / sizeof(Atom);
   params.ligand = malloc(params.natlig*sizeof(Atom));
   fread(params.ligand, sizeof(Atom), params.natlig, file);
   fclose(file);
 
-  file = openFile(FILE_PROTEIN, &length);
+  file = openFile(cl.deckDir, FILE_PROTEIN, "rb", &length);
   params.natpro = length / sizeof(Atom);
   params.protein = malloc(params.natpro*sizeof(Atom));
   fread(params.protein, sizeof(Atom), params.natpro, file);
   fclose(file);
 
-  file = openFile(FILE_FORCEFIELD, &length);
+  file = openFile(cl.deckDir, FILE_FORCEFIELD, "rb", &length);
   params.ntypes = length / sizeof(FFParams);
   params.forcefield = malloc(params.ntypes*sizeof(FFParams));
   fread(params.forcefield, sizeof(FFParams), params.ntypes, file);
   fclose(file);
 
-  file = openFile(FILE_POSES, &length);
+  file = openFile(cl.deckDir, FILE_POSES, "rb", &length);
   for (int i = 0; i < 6; i++)
     params.poses[i] = malloc(nposes*sizeof(float));
 
@@ -690,7 +719,7 @@ void initCL()
   checkError(err, "creating queue");
 
   long length;
-  FILE *file = openFile(FILE_KERNEL, &length);
+  FILE *file = openFile("./", FILE_KERNEL, "r", &length);
   char *source = malloc(length+1);
   fread(source, 1, length, file);
   source[length] = '\0';

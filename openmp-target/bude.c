@@ -10,12 +10,12 @@
 #define MAX_DEVICES      32
 #define MAX_INFO_STRING 256
 
-#define DATA_DIR          "../data"
-#define FILE_LIGAND       DATA_DIR "/ligand.dat"
-#define FILE_PROTEIN      DATA_DIR "/protein.dat"
-#define FILE_FORCEFIELD   DATA_DIR "/forcefield.dat"
-#define FILE_POSES        DATA_DIR "/poses.dat"
-#define FILE_REF_ENERGIES DATA_DIR "/ref_energies.dat"
+#define DATA_DIR          "../data/bm1"
+#define FILE_LIGAND       "/ligand.in"
+#define FILE_PROTEIN      "/protein.in"
+#define FILE_FORCEFIELD   "/forcefield.in"
+#define FILE_POSES        "/poses.in"
+#define FILE_REF_ENERGIES "/ref_energies.out"
 
 #define REF_NPOSES 65536
 
@@ -33,19 +33,43 @@ void printTimings(double start, double end, double poses_per_wi);
 void checkError(int err, const char *op);
 void runOpenMPTarget(float *results);
 
+FILE* openFile(const char *parent, const char *child,
+               const char* mode, long *length)
+{
+  char name[strlen(parent) + strlen(child) + 1];
+  strcpy(name, parent);
+  strcat(name, child);
+
+  FILE *file = NULL;
+  if (!(file = fopen(name, mode)))
+  {
+    fprintf(stderr, "Failed to open '%s'\n", name);
+    exit(1);
+  }
+  if(length){
+    fseek(file, 0, SEEK_END);
+    *length = ftell(file);
+    rewind(file);
+  }
+  return file;
+}
+
 int main(int argc, char *argv[])
 {
   loadParameters(argc, argv);
-  printf("\nPoses:      %d\n", params.nposes);
+  printf("\n");
+  printf("Poses     : %d\n", params.nposes);
   printf("Iterations: %d\n", params.iterations);
-
+  printf("Ligands   : %d\n", params.natlig);
+  printf("Proteins  : %d\n", params.natpro);
+  printf("Deck      : %s\n", params.deckDir);
   float *resultsOMP = malloc(params.nposes*sizeof(float));
   float *resultsRef = malloc(params.nposes*sizeof(float));
 
   runOpenMPTarget(resultsOMP);
 
   // Load reference results from file
-  FILE* ref_energies = fopen(FILE_REF_ENERGIES, "r");
+  FILE* ref_energies = openFile(params.deckDir, FILE_REF_ENERGIES, "r", NULL);
   size_t n_ref_poses = params.nposes;
   if (params.nposes > REF_NPOSES) {
     printf("Only validating the first %d poses.\n", REF_NPOSES);
@@ -261,22 +285,6 @@ void runOpenMPTarget(float *results)
   printTimings(start, end, 1);
 }
 
-FILE* openFile(const char *name, long *length)
-{
-  FILE *file = NULL;
-  if (!(file = fopen(name, "rb")))
-  {
-    fprintf(stderr, "Failed to open '%s'\n", name);
-    exit(1);
-  }
-
-  fseek(file, 0, SEEK_END);
-  *length = ftell(file);
-  rewind(file);
-
-  return file;
-}
-
 int parseInt(const char *str)
 {
   char *next;
@@ -287,6 +295,7 @@ int parseInt(const char *str)
 void loadParameters(int argc, char *argv[])
 {
   // Defaults
+  params.deckDir    = DATA_DIR;
   params.iterations = 8;
   _cuda.wgsize      = 64;
   _cuda.posesPerWI  = 4;
@@ -334,6 +343,15 @@ void loadParameters(int argc, char *argv[])
         exit(1);
       }
     }
+    else if (!strcmp(argv[i], "--deck"))
+    {
+      if (++i >= argc)
+      {
+        printf("Invalid deck\n");
+        exit(1);
+      }
+      params.deckDir = argv[i];
+    }
     else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h"))
     {
       printf("\n");
@@ -346,6 +364,7 @@ void loadParameters(int argc, char *argv[])
       printf("  -n  --numposes   N       Compute results for N poses\n");
       printf("  -p  --poserperwi PPWI    Compute PPWI poses per work-item\n");
       printf("  -w  --wgsize     WGSIZE  Run with work-group size WGSIZE\n");
+      printf("      --deck       DECK    Use the DECK directory as input deck\n");
       printf("\n");
       exit(0);
     }
@@ -359,25 +378,25 @@ void loadParameters(int argc, char *argv[])
   FILE *file = NULL;
   long length;
 
-  file = openFile(FILE_LIGAND, &length);
+  file = openFile(params.deckDir, FILE_LIGAND, "rb", &length);
   params.natlig = length / sizeof(Atom);
   params.ligand = malloc(params.natlig*sizeof(Atom));
   fread(params.ligand, sizeof(Atom), params.natlig, file);
   fclose(file);
 
-  file = openFile(FILE_PROTEIN, &length);
+  file = openFile(params.deckDir, FILE_PROTEIN, "rb", &length);
   params.natpro = length / sizeof(Atom);
   params.protein = malloc(params.natpro*sizeof(Atom));
   fread(params.protein, sizeof(Atom), params.natpro, file);
   fclose(file);
 
-  file = openFile(FILE_FORCEFIELD, &length);
+  file = openFile(params.deckDir, FILE_FORCEFIELD, "rb", &length);
   params.ntypes = length / sizeof(FFParams);
   params.forcefield = malloc(params.ntypes*sizeof(FFParams));
   fread(params.forcefield, sizeof(FFParams), params.ntypes, file);
   fclose(file);
 
-  file = openFile(FILE_POSES, &length);
+  file = openFile(params.deckDir, FILE_POSES, "rb", &length);
   for (int i = 0; i < 6; i++)
     params.poses[i] = malloc(nposes*sizeof(float));
 
