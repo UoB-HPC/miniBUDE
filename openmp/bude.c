@@ -43,13 +43,13 @@ void fasten_main(const int natlig,
                  const FFParams *restrict forcefield,
                  const int group);
 
-FILE* openFile(const char *parent, const char *child, 
+FILE* openFile(const char *parent, const char *child,
                const char* mode, long *length)
 {
   char name[strlen(parent) + strlen(child) + 1];
-  strcpy(name, parent); 
-  strcat(name, child); 
- 
+  strcpy(name, parent);
+  strcat(name, child);
+
   FILE *file = NULL;
   if (!(file = fopen(name, mode)))
   {
@@ -68,7 +68,8 @@ FILE* openFile(const char *parent, const char *child,
 int main(int argc, char *argv[])
 {
   loadParameters(argc, argv);
-  printf("\nPoses:      %d\n", params.nposes);
+  printf("\n");
+  printf("Poses     : %d\n", params.nposes);
   printf("Iterations: %d\n", params.iterations);
   printf("Ligands   : %d\n", params.natlig);
   printf("Proteins  : %d\n", params.natpro);
