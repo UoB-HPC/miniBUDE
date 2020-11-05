@@ -86,15 +86,17 @@ target_compile_options(bude PUBLIC "$<$<CONFIG:Debug>:${DEBUG_OPTIONS}>")
 
 if (${CMAKE_VERSION} VERSION_LESS "3.13.0")
     message(WARNING "target_link_options is only available in CMake >= 3.13.0, using fallback target_link_libraries, this may cause issues with some compilers")
-
+    message(WARNING "whitespaces are not supported for CXX_EXTRA_LINKER_FLAGS/CXX_EXTRA_FLAGS in this mode as they are treated as libraries arguments (CMake splits them)")
     if (DEFINED CXX_EXTRA_LINKER_FLAGS)
         list(APPEND EXTRA_LINK_FLAGS "-Wl,${CXX_EXTRA_LINKER_FLAGS}")
     endif ()
 
     target_link_libraries(bude PUBLIC ${EXTRA_LINK_FLAGS})
+    target_link_libraries(bude PUBLIC ${CXX_EXTRA_FLAGS})
 
 else ()
     target_link_options(bude PUBLIC LINKER:${CXX_EXTRA_LINKER_FLAGS})
+    target_link_options(bude PUBLIC ${CXX_EXTRA_FLAGS})
 endif ()
 
 
