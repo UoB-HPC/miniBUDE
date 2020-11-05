@@ -10,7 +10,7 @@
 #define MAX_DEVICES      32
 #define MAX_INFO_STRING 256
 
-#define DATA_DIR          "../data"
+#define DATA_DIR          "../data/bm1"
 #define FILE_LIGAND       "/ligand.in"
 #define FILE_PROTEIN      "/protein.in"
 #define FILE_FORCEFIELD   "/forcefield.in"
@@ -33,13 +33,13 @@ void printTimings(double start, double end, double poses_per_wi);
 void checkError(int err, const char *op);
 void runOpenMPTarget(float *results);
 
-FILE* openFile(const char *parent, const char *child, 
+FILE* openFile(const char *parent, const char *child,
                const char* mode, long *length)
 {
   char name[strlen(parent) + strlen(child) + 1];
-  strcpy(name, parent); 
-  strcat(name, child); 
- 
+  strcpy(name, parent);
+  strcat(name, child);
+
   FILE *file = NULL;
   if (!(file = fopen(name, mode)))
   {
@@ -57,7 +57,8 @@ FILE* openFile(const char *parent, const char *child,
 int main(int argc, char *argv[])
 {
   loadParameters(argc, argv);
-  printf("\nPoses:      %d\n", params.nposes);
+  printf("\n");
+  printf("Poses     : %d\n", params.nposes);
   printf("Iterations: %d\n", params.iterations);
   printf("Ligands   : %d\n", params.natlig);
   printf("Proteins  : %d\n", params.natpro);

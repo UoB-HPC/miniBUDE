@@ -6,8 +6,8 @@
 #include <iterator>
 #include <cmath>
 
-#include "make-bude-input.h"
-#include "make-bude-kernel.h"
+#include "input-utils.h"
+#include "ref-kernel.h"
 
 const std::vector<float> DEFAULT_DEGS{
 		-170.f, -160.f, -150.f, -140.f, -130.f, -120.f, -110.f, -100.f, -90.f, -80.f, -70.f, -60.f, -50.f, -40.f, -30.f, -20.f, -10.f,
@@ -105,16 +105,16 @@ int main(int argc, char *argv[]) {
 		if (arg == "--help" || arg == "-h") {
 			std::cout << "This program generates input decks for the bude benchmark program.\n";
 			std::cout << "Usage: ./makedeck [OPTIONS]\n\n"
-			          << "Options:\n"
-			          << "  -h  --help         Print this message\n"
-			          << "  -f  --forcefield   Path to a forcefield bhff file\n"
-			          << "  -p  --protein      Path to a protein mol2 file\n"
-			          << "  -l  --ligand       Path to a ligand mol2 file\n"
-			          << "  -s  --pose-seed    The random seed used to generate pose combinations (default: " << DEFAULT_POSE_SEED << ")\n"
-			          << "  -n  --pose-length  The amount of poses to generate (default: " << DEFAULT_POSE_SIZE << ")\n"
-			          << "  -o  --out          The output directory (containing {protein,ligand,forcefield,poses}.in,params.txt,energies.out) name of the decks\n"
-			          << "      --force        If specified, any file/directory that matches the output dir name will be deleted/overwritten\n"
-			          << std::endl;
+					<< "Options:\n"
+					<< "  -h  --help         Print this message\n"
+					<< "  -f  --forcefield   Path to a forcefield bhff file\n"
+					<< "  -p  --protein      Path to a protein mol2 file\n"
+					<< "  -l  --ligand       Path to a ligand mol2 file\n"
+					<< "  -s  --pose-seed    The random seed used to generate pose combinations (default: " << DEFAULT_POSE_SEED << ")\n"
+					<< "  -n  --pose-length  The amount of poses to generate (default: " << DEFAULT_POSE_SIZE << ")\n"
+					<< "  -o  --out          The output directory (containing {protein,ligand,forcefield,poses}.in,params.txt,energies.out) name of the decks\n"
+					<< "      --force        If specified, any file/directory that matches the output dir name will be deleted/overwritten\n"
+					<< std::endl;
 			std::exit(EXIT_SUCCESS);
 		}
 		fail("Unrecognized argument '" + arg + "' (try '--help')");
@@ -146,9 +146,9 @@ int main(int argc, char *argv[]) {
 
 	if (forcefield.size() != 1) {
 		std::cout << "The forcefield file contains more that one residue which the original script does not support.\n"
-		             "For the atoms in mol2 to find the correct atom type in the forcefield, "
-		             "the current implementation concatenates all residues (groups of atom) so the kernel has reference to all forcefields"
-		          << std::endl;
+					 "For the atoms in mol2 to find the correct atom type in the forcefield, "
+					 "the current implementation concatenates all residues (groups of atom) so the kernel has reference to all forcefields"
+				<< std::endl;
 	}
 
 	std::vector<bude::FFParams> ffParams;
@@ -187,8 +187,8 @@ int main(int argc, char *argv[]) {
 			if (completed % 10 == 0) {
 				auto pct = static_cast<int>((static_cast<double>(completed) / totalPoses) * 100.0);
 				std::cout << "["
-				          << std::string(pct, '|') << std::string(100 - pct, ' ')
-				          << "] (" << totalPoses << "/" << completed << ") " << pct << "%\r" << std::flush;
+						<< std::string(pct, '|') << std::string(100 - pct, ' ')
+						<< "] (" << totalPoses << "/" << completed << ") " << pct << "%\r" << std::flush;
 			}
 		};
 	}
@@ -223,8 +223,8 @@ int main(int argc, char *argv[]) {
 	std::cout << "- Poses: " << poses.pan.size() << " (seed=" << config.poseSeed << ")\n";
 
 	std::cout << "- Reference energy: " << energies.size() << " lines"
-	          << " (kernel elapsed: " << (std::chrono::duration_cast<std::chrono::milliseconds>(kernelEnd - kernelStart).count())
-	          << " ms)";
+			<< " (kernel elapsed: " << (std::chrono::duration_cast<std::chrono::milliseconds>(kernelEnd - kernelStart).count())
+			<< " ms)";
 
 
 	std::cout << std::endl;
