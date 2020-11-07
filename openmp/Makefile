@@ -12,13 +12,30 @@ $(warning COMPILER not set (use ARM, CLANG, CRAY, GNU, or INTEL))
 COMPILER=GNU
 endif
 
-MACHINE = $(shell uname -m)
-OS      = $(shell uname -s)
+WGSIZE = 64
+ARCH   = native
+AVX512 =
 
 # -------
 
-WGSIZE = 64
-ARCH   = native
+MACHINE = $(shell uname -m)
+
+ifeq ($(MACHINE), x86_64)
+ARCHFLAG = march
+
+# On Skylake and Cascade Lake, 256-bit vectors are used by default, but 512-bit is more beneficial
+AVX512   =  $(if $(filter skylake% cascadelake% %avx512, $(ARCH)),yes,)
+
+# Intel platforms benefit more from unrolling, specially Skylake and later
+WGSIZE = 256
+
+else
+# The target CPU is specificed differently on x86 and on aarch64
+# https://community.arm.com/developer/tools-software/tools/b/tools-software-ides-blog/posts/compiler-flags-across-architectures-march-mtune-and-mcpu
+ARCHFLAG = mcpu
+endif
+
+# -------
 
 CC_ARM    = armclang
 CC_CLANG  = clang
@@ -27,19 +44,11 @@ CC_GNU    = gcc
 CC_INTEL  = icc
 CC = $(CC_$(COMPILER))
 
-# The target CPU is specificed differently on x86 and on aarch64
-# https://community.arm.com/developer/tools-software/tools/b/tools-software-ides-blog/posts/compiler-flags-across-architectures-march-mtune-and-mcpu
-ifeq ($(MACHINE), aarch64)
-ARCHFLAG = mcpu
-else
-ARCHFLAG = march
-endif
-
 CFLAGS_ARM   = -std=c99 -Wall -Ofast -ffast-math -fopenmp -fsimdmath
-CFLAGS_CLANG = -std=c99 -Wall -Ofast -ffast-math -fopenmp
+CFLAGS_CLANG = -std=c99 -Wall -Ofast -ffast-math -fopenmp $(if $(AVX512),-mprefer-vector-width=512)
 CFLAGS_CRAY  = -O3 -hfp4 -haggress -hflex_mp=tolerant -hvector3 -hscalar3 -Gfast
-CFLAGS_GNU   = -std=c99 -Wall -Ofast -ffast-math -fopenmp
-CFLAGS_INTEL = -std=c99 -Wall -Ofast -ffast-math -fopenmp
+CFLAGS_GNU   = -std=c99 -Wall -Ofast -ffast-math -fopenmp $(if $(AVX512),-mprefer-vector-width=512)
+CFLAGS_INTEL = -std=c99 -Wall -Ofast -ffast-math -fopenmp $(if $(AVX512),-qopt-zmm-usage=high)
 CFLAGS = $(CFLAGS_$(COMPILER)) -DWGSIZE=$(WGSIZE) -$(ARCHFLAG)=$(ARCH)
 
 LDFLAGS = -lm
