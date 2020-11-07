@@ -44,12 +44,12 @@ CC_GNU    = gcc
 CC_INTEL  = icc
 CC = $(CC_$(COMPILER))
 
-CFLAGS_ARM   = -std=c99 -Wall -Ofast -ffast-math -fopenmp -fsimdmath
-CFLAGS_CLANG = -std=c99 -Wall -Ofast -ffast-math -fopenmp $(if $(AVX512),-mprefer-vector-width=512)
-CFLAGS_CRAY  = -O3 -hfp4 -haggress -hflex_mp=tolerant -hvector3 -hscalar3 -Gfast
-CFLAGS_GNU   = -std=c99 -Wall -Ofast -ffast-math -fopenmp $(if $(AVX512),-mprefer-vector-width=512)
-CFLAGS_INTEL = -std=c99 -Wall -Ofast -ffast-math -fopenmp $(if $(AVX512),-qopt-zmm-usage=high)
-CFLAGS = $(CFLAGS_$(COMPILER)) -DWGSIZE=$(WGSIZE) -$(ARCHFLAG)=$(ARCH)
+CFLAGS_ARM   = -std=c99 -Wall -Ofast -ffast-math -fopenmp -fsimdmath -$(ARCHFLAG)=$(ARCH)
+CFLAGS_CLANG = -std=c99 -Wall -Ofast -ffast-math -fopenmp -$(ARCHFLAG)=$(ARCH) $(if $(AVX512),-mprefer-vector-width=512)
+CFLAGS_CRAY  = -O3 -homp -hfp4 -haggress -hflex_mp=tolerant -hvector3 -hscalar3 -Gfast
+CFLAGS_GNU   = -std=c99 -Wall -Ofast -ffast-math -fopenmp -$(ARCHFLAG)=$(ARCH) $(if $(AVX512),-mprefer-vector-width=512)
+CFLAGS_INTEL = -std=c99 -Wall -Ofast -ffast-math -fopenmp -$(ARCHFLAG)=$(ARCH) $(if $(AVX512),-qopt-zmm-usage=high)
+CFLAGS = $(CFLAGS_$(COMPILER)) -DWGSIZE=$(WGSIZE)
 
 LDFLAGS = -lm
 

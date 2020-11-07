@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
     diff = fabs(e - energiesOMP[i]) / e;
     if (diff > maxdiff) maxdiff = diff;
   }
-  printf("Largest difference was %.3f%%.\n\n", 100*maxdiff); // Expect numbers to be accurate to 2 decimal places
+  printf("\nLargest difference was %.3f%%.\n\n", 100*maxdiff); // Expect numbers to be accurate to 2 decimal places
   fclose(ref_energies);
 
   free(energiesOMP);
