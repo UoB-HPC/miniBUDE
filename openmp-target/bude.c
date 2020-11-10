@@ -136,7 +136,7 @@ void runOpenMPTarget(float *results)
 
     for (int itr = 0; itr < iterations_s; itr++)
     {
-#pragma omp target teams distribute simd
+#pragma omp target teams distribute parallel for
       for (int i = 0; i < nposes_s/NUM_TD_PER_THREAD; ++i)
       {
         const int ind = i*NUM_TD_PER_THREAD;

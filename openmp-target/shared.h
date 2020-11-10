@@ -1,7 +1,7 @@
 #ifndef __SHARED
 #define __SHARED
 
-#define NUM_TD_PER_THREAD 4
+#define NUM_TD_PER_THREAD 2
 
 typedef struct
 {
