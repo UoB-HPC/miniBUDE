@@ -10,7 +10,10 @@ CC = cc
 
 ARCH = sm_70
 
-CFLAGS = -O3 -fopenmp -fopenmp-targets=nvptx64 -Xopenmp-target -march=$(ARCH)
+# 2 iteratiuons per loop is best for Pascal, 4 for Volta
+TD_PER_THREAD = $(if $(filter %_60, $(ARCH)),2,4)
+
+CFLAGS = -O3 -fopenmp -fopenmp-targets=nvptx64 -Xopenmp-target -march=$(ARCH) -DNUM_TD_PER_THREAD=$(TD_PER_THREAD)
 LDFLAGS = -lm
 
 OBJ = $(patsubst %.c,%.o,$(wildcard *.c))
