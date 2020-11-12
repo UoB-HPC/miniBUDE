@@ -126,6 +126,8 @@ void runOpenACC(float *results)
     double start;
     double end;
 
+    start = getTimestamp();
+
 #pragma acc data \
     copyin(protein_s[:params.natpro], ligand_s[:params.natlig], \
             forcefield_s[:params.ntypes], poses_0[:params.nposes], \
@@ -134,7 +136,6 @@ void runOpenACC(float *results)
             poses_5[:params.nposes])\
     copyout(results[:params.nposes])
     {
-        start = getTimestamp();
 
         for (int itr = 0; itr < iterations_s; itr++)
         {
@@ -292,7 +293,6 @@ void runOpenACC(float *results)
 
         end = getTimestamp();
     }
-
 
     printTimings(start, end, 1);
 }
