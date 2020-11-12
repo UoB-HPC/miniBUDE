@@ -11,6 +11,7 @@ The top-level `makedeck` directory contains an input deck generation program and
 Each other subdirectory contains a separate implementation:
 
 - [OpenMP](openmp/) for CPUs
+- [SYCL](sycl/) for CPUs
 - [OpenMP target](openmp-target/) for GPUs
 - [OpenCL](opencl/) for GPUs
 - [CUDA](cuda/) for GPUs
@@ -31,3 +32,14 @@ For very short runs, e.g. for simulation, use `-n 1024` to reduce the number of 
 The maximum number of poses supported is `65536`.
 
 Refer to each implementation's README for further run instructions.
+
+### Benchmarks
+
+Two input decks are included in this repository:
+
+* `bm1` is a short benchmark (~100 ms/iteration on a 64-core ThunderX2 node) based on a small ligand (26 atoms)
+* `bm2` is a long benchmark (~25 s/iteration on a 64-core ThunderX2 node) based on a big ligand (2672 atoms)
+
+They are located in the [`data`](data/) directory, and `bm1` is run by default.
+All implementations accept a `--deck` parameter to specify an input deck directory.
+See [`makedeck`](makedeck/) for how to generate additional input decks.
