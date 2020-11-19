@@ -78,7 +78,7 @@ endif ()
 add_definitions(-DNUM_TD_PER_THREAD=${NUM_TD_PER_THREAD})
 
 set(DEBUG_OPTIONS -O2 -fno-omit-frame-pointer ${CXX_EXTRA_FLAGS})
-set(RELEASE_OPTIONS -Ofast -ffast-math -march=native ${CXX_EXTRA_FLAGS})
+set(RELEASE_OPTIONS -Ofast -ffast-math -march=native -mtune=native ${CXX_EXTRA_FLAGS})
 
 target_compile_options(bude PUBLIC "$<$<CONFIG:RelWithDebInfo>:${RELEASE_OPTIONS}>")
 target_compile_options(bude PUBLIC "$<$<CONFIG:Release>:${RELEASE_OPTIONS}>")

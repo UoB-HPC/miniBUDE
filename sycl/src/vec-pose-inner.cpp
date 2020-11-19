@@ -150,10 +150,12 @@ void fasten_main(
 					const float x = lpos[i].x() - p_atom.x;
 					const float y = lpos[i].y() - p_atom.y;
 					const float z = lpos[i].z() - p_atom.z;
-					const float distij = clsycl::native::sqrt(x * x + y * y + z * z);
 
-					//TODO replace with:
-					// const float distij = clsycl::distance(lpos[id], clsycl::float3(p_atom.x, p_atom.y, p_atom.z));
+					// XXX as of oneapi-2021.1-beta10, the cl::sycl::native::sqrt variant is significantly slower for no apparent reason
+					const float distij = clsycl::sqrt(x * x + y * y + z * z);
+
+					// XXX as of oneapi-2021.1-beta10, the following variant is significantly slower for no apparent reason
+					//const float distij = clsycl::distance(lpos[i], clsycl::float3(p_atom.x, p_atom.y, p_atom.z));
 
 					// Calculate the sum of the sphere radii
 					const float distbb = distij - radij;
