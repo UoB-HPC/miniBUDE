@@ -28,7 +28,7 @@ if (SYCL_RUNTIME)
         set(OpenCL_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
         add_definitions(-DCL_TARGET_OPENCL_VERSION=220)
         add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
-        set(COMPUTECPP_USER_FLAGS -no-serial-memop)
+        set(COMPUTECPP_USER_FLAGS -O3 -no-serial-memop)
         find_package(ComputeCpp REQUIRED)
     elseif (${SYCL_RUNTIME} STREQUAL "DPCPP")
 
