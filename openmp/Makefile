@@ -15,6 +15,7 @@ endif
 WGSIZE = 64
 ARCH   = native
 AVX512 =
+EXTRA_FLAGS =
 
 # -------
 
@@ -63,7 +64,7 @@ EXE = bude
 all: $(EXE)
 
 $(EXE): bude.c bude.h vec-pose-inner.c
-	$(CC) $(CFLAGS) bude.c vec-pose-inner.c -o $@ $(LDFLAGS)
+	$(CC) $(CFLAGS) bude.c vec-pose-inner.c -o $@ $(LDFLAGS) $(EXTRA_FLAGS)
 
 clean:
 	rm -f $(EXE)
