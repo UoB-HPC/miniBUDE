@@ -202,11 +202,26 @@ Params loadParameters(const std::vector<std::string> &args) {
 //		if (readParam(i, arg, {"--posesperwi", "-p"}, std::bind(bindInt, _1, std::ref(params.posesPerWI), "posesperwi"))) continue;
 		if (readParam(i, arg, {"--wgsize", "-w"}, std::bind(bindInt, _1, std::ref(params.wgSize), "wgsize"))) continue;
 		if (readParam(i, arg, {"--device", "-d"}, [&](const std::string &param) {
-			try { params.device = clsycl::device::get_devices().at(std::stoul(param)); }
+
+			auto devices = clsycl::device::get_devices();
+
+			try { params.device = devices.at(std::stoul(param)); }
 			catch (const std::exception &e) {
-				std::cerr << "Unable to parse/select device index `" << param << "`:"
-				          << e.what() << std::endl;
-				std::exit(EXIT_FAILURE);
+				std::cout << "Unable to parse/select device index `" << param << "`:" << e.what() << std::endl;
+				std::cout << "Attempting to match device with substring  `" << param << "`" << std::endl;
+
+				auto matching = std::find_if(devices.begin(), devices.end(), [param](const clsycl::device &device) {
+					return device.get_info<clsycl::info::device::name>().find(param) != std::string::npos;
+				});
+
+				if (matching != devices.end()) {
+					params.device = *matching;
+					std::cout << "Using first device matching substring `" << param << "`" << std::endl;
+				}
+				else {
+					std::cerr << "No matching devices" << std::endl;
+					std::exit(EXIT_FAILURE);
+				}
 			}
 		})) { continue; }
 		if (readParam(i, arg, {"--deck"}, [&](const std::string &param) { params.deckDir = param; })) continue;
@@ -226,8 +241,9 @@ Params loadParameters(const std::vector<std::string> &args) {
 			          << "  -n  --numposes   N       Compute energies for N poses (default: " << DEFAULT_NPOSES << ")\n"
 //			          << "  -p  --poserperwi PPWI    Compute PPWI poses per work-item (default: " << DEFAULT_PPWI << ")\n"
 			          << "  -w  --wgsize     WGSIZE  Run with work-group size WGSIZE (default: " << DEFAULT_WGSIZE << ")\n"
-			          << "  -d  --device     INDEX   Select device at INDEX from output of --list (default: first device of the list)\n"
-			          << "      --deck       DECK     Use the DECK directory as input deck (default: " << DATA_DIR << ")"
+			          << "  -d  --device     INDEX   Select device at INDEX from output of --list, "
+			                                         "performs a substring match of device names if INDEX is not an integer (default: first device of the list)\n"
+			          << "      --deck       DECK    Use the DECK directory as input deck (default: " << DATA_DIR << ")"
 			          << "  -l  --list               List available devices"
 			          << std::endl;
 			std::exit(EXIT_SUCCESS);
