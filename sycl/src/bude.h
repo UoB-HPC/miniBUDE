@@ -22,7 +22,7 @@
 #define DEFAULT_NPOSES 65536
 #define REF_NPOSES     65536
 
-#define DATA_DIR          "../data"
+#define DATA_DIR          "../data/bm1"
 #define FILE_LIGAND       "/ligand.in"
 #define FILE_PROTEIN      "/protein.in"
 #define FILE_FORCEFIELD   "/forcefield.in"
