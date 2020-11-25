@@ -11,12 +11,15 @@ First, generate a build:
 
 Flags:
 
-* `SYCL_RUNTIME`: one of `HIPSYCL|COMPUTECPP|DPCPP`
-  * For `SYCL_RUNTIME=HIPSYCL`, supply hipSYCL install path with `HIPSYCL_INSTALL_DIR`
+* `SYCL_RUNTIME`: one of `HIPSYCL|HIPSYCL-NEXT|COMPUTECPP|DPCPP`
+  * For `SYCL_RUNTIME=HIPSYCL`, supply hipSYCL (versions before 38bc08d) install path with `HIPSYCL_INSTALL_DIR`
+  * For `SYCL_RUNTIME=HIPSYCL-NEXT`, supply hipSYCL (versions after 38bc08d) install path with `HIPSYCL_INSTALL_DIR`
   * For `SYCL_RUNTIME=COMPUTECPP`, supply ComputeCpp install path with `ComputeCpp_DIR`
   * For `SYCL_RUNTIME=DPCPP`, make sure the DPC++ compiler (`dpcpp`) is available in `PATH`
 * `CXX_EXTRA_FLAGS`: `STRING`, appends extra flags that will be passed on to the compiler, applies to all configs
 * `CXX_EXTRA_LINKER_FLAGS`: `STRING`, appends extra linker flags (the comma separated list after the `-Wl` flag) to the linker; applies to all configs
+
+**IMPORTANT:** you must delete your CMake `build` directory if you change `SYCL_RUNTIME` otherwise changes may not be picked up.
 
 If parts of your toolchain are installed at different places, you'll have to specify it manually, for example:
 

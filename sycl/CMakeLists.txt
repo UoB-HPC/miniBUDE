@@ -44,10 +44,10 @@ if (SYCL_RUNTIME)
         set(CMAKE_CXX_COMPILER "dpcpp")
         set(EXTRA_FLAGS -pedantic)
     else ()
-        message(FATAL_ERROR "SYCL_RUNTIME unsupported, must be one of HIPSYCL|COMPUTECPP|DPCPP, got ${SYCL_RUNTIME}")
+        message(FATAL_ERROR "SYCL_RUNTIME unsupported, must be one of HIPSYCL|HIPSYCL-NEXT|COMPUTECPP|DPCPP, got ${SYCL_RUNTIME}")
     endif ()
 else ()
-    message(FATAL_ERROR "SYCL_RUNTIME not defined, must be one of HIPSYCL|COMPUTECPP|DPCPP")
+    message(FATAL_ERROR "SYCL_RUNTIME not defined, must be one of HIPSYCL|HIPSYCL-NEXT|COMPUTECPP|DPCPP")
 endif ()
 
 
