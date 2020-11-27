@@ -3,7 +3,12 @@
 #include <cstdint>
 #include <string>
 #include <iomanip>
-#include <kokkos/Kokkos_Core.hpp>
+
+#ifdef KOKKOS_IN_TREE
+	#include <Kokkos_Core.hpp>
+#else
+	#include <kokkos/Kokkos_Core.hpp>
+#endif
 
 #ifndef DEFAULT_WGSIZE
 #define DEFAULT_WGSIZE 64

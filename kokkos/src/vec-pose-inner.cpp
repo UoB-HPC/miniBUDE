@@ -1,7 +1,6 @@
 #include "bude.h"
 #include <limits>
 #include <cmath>
-#include <kokkos/Kokkos_Core.hpp>
 
 #define ZERO    0.0f
 #define QUARTER 0.25f
