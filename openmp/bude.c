@@ -106,6 +106,42 @@ void runOpenMP(float *restrict results)
 {
   printf("\nRunning C/OpenMP\n");
 
+
+
+  float    *restrict poses[6];
+  Atom     *restrict protein = malloc(sizeof(Atom) * params.natpro);
+  Atom     *restrict ligand = malloc(sizeof(Atom) * params.natlig);
+  FFParams *restrict forcefield = malloc(sizeof(FFParams) * params.ntypes);
+  float    *restrict buffer = malloc(sizeof(float) * params.nposes);
+
+  for(int p = 0; p < 6; p++){
+  poses[p] = malloc(sizeof(float) * params.nposes);
+#pragma omp parallel
+    for(int i = 0; i < params.nposes; i++){
+      poses[p][i] = params.poses[p][i];
+    }  
+  }
+
+#pragma omp parallel
+  for(int i = 0; i < params.nposes; i++){
+    buffer[i] = 0.f;
+  }  
+
+#pragma omp parallel
+  for(int i = 0; i < params.natpro; i++){
+    protein[i] = params.protein[i];
+  } 
+
+#pragma omp parallel
+  for(int i = 0; i < params.natlig; i++){
+    ligand[i] = params.ligand[i];
+  }
+
+ #pragma omp parallel
+  for(int i = 0; i < params.ntypes; i++){
+    forcefield[i] = params.forcefield[i];
+  } 
+
   double start = getTimestamp();
 
 #pragma omp parallel
@@ -114,14 +150,22 @@ void runOpenMP(float *restrict results)
 #pragma omp for
     for (unsigned group = 0; group < (params.nposes/WGSIZE/PPWI); group++)
     {
-      fasten_main(params.natlig, params.natpro, params.protein, params.ligand,
-                  params.poses[0], params.poses[1], params.poses[2],
-                  params.poses[3], params.poses[4], params.poses[5],
-                  results, params.forcefield, group);
+      fasten_main(params.natlig, params.natpro, protein, ligand,
+                  poses[0], poses[1], poses[2],
+                  poses[3], poses[4], poses[5],
+                  buffer, forcefield, group);
     }
   }
 
   double end = getTimestamp();
+
+  memcpy(results, buffer, sizeof(float) * params.nposes);
+
+  free(protein);
+  free(ligand);
+  free(forcefield);
+  free(buffer);
+  for(int p = 0; p < 6; p++) free(poses[p]);
 
   printTimings(start, end, PPWI);
 }
