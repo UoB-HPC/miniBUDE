@@ -64,11 +64,16 @@ void fasten_main(
 		clsycl::accessor<FFParams, 1, R, Global> forcefield,
 		clsycl::accessor<float, 1, RW, Global> etotals);
 
-void printTimings(const Params &params, const TimePoint &start, const TimePoint &end, double poses_per_wi) {
 
+double ellapsedMillis( const TimePoint &start, const TimePoint &end){
 	auto elapsedNs = static_cast<double>(
 			std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
-	double ms = ((elapsedNs) / params.iterations) * 1e-6;
+	return elapsedNs * 1e-6;
+}
+
+void printTimings(const Params &params, double millis, double poses_per_wi) {
+
+	auto ms = ((millis) / params.iterations);
 
 	// Compute FLOP/s
 	double runtime = ms * 1e-3;
@@ -92,7 +97,7 @@ void printTimings(const Params &params, const TimePoint &start, const TimePoint 
 	// Print stats
 	std::cout.precision(3);
 	std::cout << std::fixed;
-	std::cout << "- Total time:     " << (elapsedNs * 1e-6) << " ms\n";
+	std::cout << "- Kernel time:    " << (millis) << " ms\n";
 	std::cout << "- Average time:   " << ms << " ms\n";
 	std::cout << "- Interactions/s: " << (interactions_per_sec / 1e9) << " billion\n";
 	std::cout << "- GFLOP/s:        " << gflops << "\n";
@@ -279,56 +284,78 @@ Params loadParameters(const std::vector<std::string> &args) {
 	return params;
 }
 
+template<typename T>
+static clsycl::buffer<T> mkBuffer(clsycl::queue &queue, const std::vector< T> &xs ) {
+	clsycl::buffer<T> buffer(xs.size());
+	queue.submit([&](clsycl::handler &h) {
+		h.copy(xs.data(), buffer.template get_access<RW>(h));
+	});
+	return buffer;
+}
+
 std::vector<float> runKernel(Params params) {
 
 	std::vector<float> energies(params.nposes);
-
-	auto start = std::chrono::high_resolution_clock::now();
-
-
+	auto contextStart = std::chrono::high_resolution_clock::now();
 	clsycl::queue queue(params.device);
+	auto contextEnd = std::chrono::high_resolution_clock::now();
 
-	{
+	auto xferAllocStart = std::chrono::high_resolution_clock::now();
 
-		clsycl::buffer<Atom> protein(params.protein.data(), params.protein.size());
-		clsycl::buffer<Atom> ligand(params.ligand.data(), params.ligand.size());
-		clsycl::buffer<float> transforms_0(params.poses[0].data(), params.poses[0].size());
-		clsycl::buffer<float> transforms_1(params.poses[1].data(), params.poses[1].size());
-		clsycl::buffer<float> transforms_2(params.poses[2].data(), params.poses[2].size());
-		clsycl::buffer<float> transforms_3(params.poses[3].data(), params.poses[3].size());
-		clsycl::buffer<float> transforms_4(params.poses[4].data(), params.poses[4].size());
-		clsycl::buffer<float> transforms_5(params.poses[5].data(), params.poses[5].size());
-		clsycl::buffer<FFParams> forcefield(params.forcefield.data(), params.forcefield.size());
-		clsycl::buffer<float> results(energies.data(), energies.size());
+	auto protein = mkBuffer(queue, params.protein);
+	auto ligand = mkBuffer(queue, params.ligand);
+	auto transforms_0 = mkBuffer(queue, params.poses[0]);
+	auto transforms_1 = mkBuffer(queue, params.poses[1]);
+	auto transforms_2 = mkBuffer(queue, params.poses[2]);
+	auto transforms_3 = mkBuffer(queue, params.poses[3]);
+	auto transforms_4 = mkBuffer(queue, params.poses[4]);
+	auto transforms_5 = mkBuffer(queue, params.poses[5]);
+	auto forcefield = mkBuffer(queue, params.forcefield);
+
+	clsycl::buffer<float> results(energies.size());
+	queue.submit([&](clsycl::handler &h) {
+		h.fill(results.get_access<W>(h), 0.f);
+	});
+
+	auto xferAllocEnd = std::chrono::high_resolution_clock::now();
 
 
-		for (size_t i = 0; i < params.iterations; ++i) {
-			queue.submit([&](clsycl::handler &h) {
-				fasten_main(h,
-//				            params.posesPerWI,
-				            params.wgSize,
-				            params.ntypes, params.nposes,
-				            params.natlig, params.natpro,
-				            protein.get_access<R>(h),
-				            ligand.get_access<R>(h),
-				            transforms_0.get_access<R>(h),
-				            transforms_1.get_access<R>(h),
-				            transforms_2.get_access<R>(h),
-				            transforms_3.get_access<R>(h),
-				            transforms_4.get_access<R>(h),
-				            transforms_5.get_access<R>(h),
-				            forcefield.get_access<R>(h),
-				            results.get_access<RW>(h)
-				);
-			});
-		}
+	queue.wait();
 
+	auto kernelStart = std::chrono::high_resolution_clock::now();
+
+	for (size_t i = 0; i < params.iterations; ++i) {
+		queue.submit([&](clsycl::handler &h) {
+			fasten_main(h,
+					params.wgSize,
+					params.ntypes, params.nposes,
+					params.natlig, params.natpro,
+					protein.get_access<R>(h),
+					ligand.get_access<R>(h),
+					transforms_0.get_access<R>(h),
+					transforms_1.get_access<R>(h),
+					transforms_2.get_access<R>(h),
+					transforms_3.get_access<R>(h),
+					transforms_4.get_access<R>(h),
+					transforms_5.get_access<R>(h),
+					forcefield.get_access<R>(h),
+					results.get_access<RW>(h)
+			);
+		});
 	}
+	queue.wait();
 
+	auto kernelEnd = std::chrono::high_resolution_clock::now();
 
-	auto end = std::chrono::high_resolution_clock::now();
+	clsycl::buffer<float> buffer(energies.data(), energies.size());
+	queue.submit([&](clsycl::handler &h) { h.copy(results.get_access<RW>(h), buffer.get_access<RW>(h)); });
+	queue.wait();
 
-	printTimings(params, start, end, NUM_TD_PER_THREAD);
+	std::cout
+			<< "Context time:    " << ellapsedMillis(contextStart, contextEnd) << " ms\n"
+			<< "Xfer+Alloc time: " << ellapsedMillis(xferAllocStart, xferAllocEnd) << " ms\n" << std::endl;
+
+	printTimings(params, ellapsedMillis(kernelStart, kernelEnd), NUM_TD_PER_THREAD);
 	return energies;
 }
 

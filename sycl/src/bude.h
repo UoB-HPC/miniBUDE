@@ -32,6 +32,7 @@
 namespace clsycl = cl::sycl;
 
 static constexpr clsycl::access::mode R = clsycl::access::mode::read;
+static constexpr clsycl::access::mode W = clsycl::access::mode::write;
 static constexpr clsycl::access::mode RW = clsycl::access::mode::read_write;
 
 static constexpr clsycl::access::target Global = clsycl::access::target::global_buffer;
