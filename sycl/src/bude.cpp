@@ -245,7 +245,7 @@ Params loadParameters(const std::vector<std::string> &args) {
 			          << "  -i  --iterations I       Repeat kernel I times (default: " << DEFAULT_ITERS << ")\n"
 			          << "  -n  --numposes   N       Compute energies for N poses (default: " << DEFAULT_NPOSES << ")\n"
 //			          << "  -p  --poserperwi PPWI    Compute PPWI poses per work-item (default: " << DEFAULT_PPWI << ")\n"
-			          << "  -w  --wgsize     WGSIZE  Run with work-group size WGSIZE (default: " << DEFAULT_WGSIZE << ")\n"
+					  << "  -w  --wgsize     WGSIZE  Run with work-group size WGSIZE using nd_range, set to 0 for plain range (default: " << DEFAULT_WGSIZE << ")\n"
 			          << "  -d  --device     INDEX   Select device at INDEX from output of --list, "
 			                                         "performs a substring match of device names if INDEX is not an integer (default: first device of the list)\n"
 			          << "      --deck       DECK    Use the DECK directory as input deck (default: " << DATA_DIR << ")"
@@ -371,7 +371,7 @@ int main(int argc, char *argv[]) {
 	std::cout << "Ligands   : " << params.natlig << std::endl;
 	std::cout << "Proteins  : " << params.natpro << std::endl;
 	std::cout << "Deck      : " << params.deckDir << std::endl;
-
+	std::cout << "WG        : " << params.wgSize << std::boolalpha << " (use nd_range:" << (params.wgSize > 0) << ")" << std::endl;
 	auto energies = runKernel(params);
 
 	//XXX Keep the output format consistent with the C impl. so no fancy streams here

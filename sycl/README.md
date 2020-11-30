@@ -53,6 +53,8 @@ For 128-bit vectors, `16` is a good choice.
 
 This parameter can be set at runtime, use `--help` to find out how the block size can be changed.
 
+Using block size of `0` will invoke the simple `parallel_for` with `range<1>` instead of `nd_range<1>`.
+
 ## Running
 
 This implementation has no special run-time options.
