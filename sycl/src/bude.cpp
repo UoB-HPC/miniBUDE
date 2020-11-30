@@ -218,11 +218,12 @@ Params loadParameters(const std::vector<std::string> &args) {
 				auto matching = std::find_if(devices.begin(), devices.end(), [param](const clsycl::device &device) {
 					return device.get_info<clsycl::info::device::name>().find(param) != std::string::npos;
 				});
-
 				if (matching != devices.end()) {
 					params.device = *matching;
 					std::cout << "Using first device matching substring `" << param << "`" << std::endl;
 				}
+				else if(devices.size() == 1)
+					std::cerr << "No matching device but there's only one device, will be using that anyway"<< std::endl;
 				else {
 					std::cerr << "No matching devices" << std::endl;
 					std::exit(EXIT_FAILURE);
