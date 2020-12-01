@@ -7,7 +7,7 @@ This is an implementation of BUDE using Kokkos.
 This implementation uses CMake.
 First, generate a build:
 
-    cmake3 -Bbuild -H. -DCMAKE_BUILD_TYPE=Release
+    cmake -Bbuild -H. -DCMAKE_BUILD_TYPE=Release
 
 Flags:
 
@@ -18,15 +18,15 @@ Flags:
 * `DEFAULT_WGSIZE`: `INGEGER`, sets the [block size](#block-size). Defaults to 64.
 
 
-    cmake3 -Bbuild -H.  \
+    cmake -Bbuild -H.  \
     -DCMAKE_C_COMPILER=/nfs/software/x86_64/gcc/9.1.0/bin/gcc \
     -DCMAKE_CXX_COMPILER=/nfs/software/x86_64/gcc/9.1.0/bin/g++ \
     -DCMAKE_BUILD_TYPE=Release
 
 
-**IMPORTANT:** If you plan on specifying [Kokkos flags](https://github.com/kokkos/kokkos/blob/master/BUILD.md#kokkos-keyword-listing) at build-time, you must use the `KOKKOS_IN_TREE` option. For example:
+**IMPORTANT:** If need to specify [Kokkos flags](https://github.com/kokkos/kokkos/blob/master/BUILD.md#kokkos-keyword-listing) at build-time, you must use the `KOKKOS_IN_TREE` option. For example:
 
-    cmake3 -Bbuild -H.  \
+    cmake -Bbuild -H.  \
     -DKOKKOS_IN_TREE=<path_to_kokkos_src> \
     -DKokkos_ENABLE_OPENMP=ON \
     -DKokkos_ARCH_ZEN2=ON \
@@ -35,7 +35,7 @@ Flags:
 
 Proceed with compiling:
 
-    cmake3 --build build --target bude --config Release -j $(nproc)
+    cmake --build build --target bude --config Release -j $(nproc)
 
 The binary can be found at `build/bude`.
 
