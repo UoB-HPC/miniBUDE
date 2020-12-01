@@ -10,19 +10,15 @@
 	#include <kokkos/Kokkos_Core.hpp>
 #endif
 
-#ifndef DEFAULT_WGSIZE
-#define DEFAULT_WGSIZE 64
-#endif
-
 #ifndef WG_SIZE
-#define WG_SIZE DEFAULT_WGSIZE
+#define WG_SIZE 128
 #endif
 
 #define DEFAULT_ITERS  8
 #define DEFAULT_NPOSES 65536
 #define REF_NPOSES     65536
 
-#define DATA_DIR          "../data"
+#define DATA_DIR          "../data/bm1"
 #define FILE_LIGAND       "/ligand.in"
 #define FILE_PROTEIN      "/protein.in"
 #define FILE_FORCEFIELD   "/forcefield.in"

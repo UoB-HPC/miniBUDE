@@ -165,7 +165,6 @@ Params loadParameters(const std::vector<std::string> &args) {
 					<< "  -h  --help               Print this message\n"
 					<< "  -i  --iterations I       Repeat kernel I times (default: " << DEFAULT_ITERS << ")\n"
 					<< "  -n  --numposes   N       Compute energies for N poses (default: " << DEFAULT_NPOSES << ")\n"
-					<< "  -w  --wgsize     WGSIZE  Run with work-group size WGSIZE (default: " << DEFAULT_WGSIZE << ")\n"
 					<< "      --deck       DECK    Use the DECK directory as input deck (default: " << DATA_DIR << ")"
 					<< std::endl;
 			std::exit(EXIT_SUCCESS);
@@ -205,7 +204,6 @@ std::vector<float> runKernel(Params params) {
 
 	std::vector<float> energies(params.nposes);
 
-	auto start = std::chrono::high_resolution_clock::now();
 
 
 	Kokkos::View<Atom *> protein(params.protein.data(), params.protein.size());
@@ -219,27 +217,27 @@ std::vector<float> runKernel(Params params) {
 	Kokkos::View<FFParams *> forcefield(params.forcefield.data(), params.forcefield.size());
 	Kokkos::View<float *> results(energies.data(), energies.size());
 
-	for (size_t i = 0; i < params.iterations; ++i) {
+	const auto runKernel = [&](){
 		Kokkos::parallel_for("fasten", (params.nposes / WG_SIZE), KOKKOS_LAMBDA(const size_t group) {
 			fasten_main(group,
 					params.ntypes, params.nposes,
 					params.natlig, params.natpro,
-					protein,
-					ligand,
-					transforms_0,
-					transforms_1,
-					transforms_2,
-					transforms_3,
-					transforms_4,
-					transforms_5,
-					forcefield,
-					results);
+					protein, ligand,
+					transforms_0, transforms_1, transforms_2,
+					transforms_3, transforms_4, transforms_5,
+					forcefield, results);
 		});
-	}
+	};
 
-
+	// warm up
+	runKernel();
 	Kokkos::fence();
 
+	auto start = std::chrono::high_resolution_clock::now();
+	for (size_t i = 0; i < params.iterations; ++i) {
+		runKernel();
+	}
+	Kokkos::fence();
 	auto end = std::chrono::high_resolution_clock::now();
 
 	printTimings(params, start, end, 1);

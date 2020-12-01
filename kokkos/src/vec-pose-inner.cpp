@@ -154,5 +154,4 @@ void fasten_main(
 		etotals[group * WG_SIZE + l] = etot[l] * 0.5f;
 	}
 
-
 }

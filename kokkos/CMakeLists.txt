@@ -45,8 +45,7 @@ target_compile_options(bude
 
 
 if (NOT DEFINED WG_SIZE)
-    message(STATUS "WG_SIZE unspecified, defaulting to 64")
-    set(WG_SIZE 64)
+    message(STATUS "WG_SIZE unspecified, using source default (available with --help in the compiled binary)")
 endif ()
 
 
