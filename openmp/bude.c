@@ -7,6 +7,20 @@
 
 #include "bude.h"
 
+// This block enables compilation of the code with and without LIKWID in place
+#ifdef LIKWID_PERFMON
+#include <likwid.h>
+#else
+#define LIKWID_MARKER_INIT
+#define LIKWID_MARKER_THREADINIT
+#define LIKWID_MARKER_SWITCH
+#define LIKWID_MARKER_REGISTER(regionTag)
+#define LIKWID_MARKER_START(regionTag)
+#define LIKWID_MARKER_STOP(regionTag)
+#define LIKWID_MARKER_CLOSE
+#define LIKWID_MARKER_GET(regionTag, nevents, events, time, count)
+#endif
+
 struct
 {
   int    natlig;
@@ -106,9 +120,17 @@ void runOpenMP(float *restrict results)
 {
   printf("\nRunning C/OpenMP\n");
 
+  LIKWID_MARKER_INIT;
+#pragma omp parallel
+{
+  LIKWID_MARKER_THREADINIT;
+}
+
   double start = getTimestamp();
 
 #pragma omp parallel
+{
+  LIKWID_MARKER_START("runOpenMP");
   for (int itr = 0; itr < params.iterations; itr++)
   {
 #pragma omp for
@@ -120,8 +142,12 @@ void runOpenMP(float *restrict results)
                   results, params.forcefield, group);
     }
   }
+  LIKWID_MARKER_STOP("runOpenMP");
+}
 
   double end = getTimestamp();
+
+    LIKWID_MARKER_CLOSE;
 
   printTimings(start, end);
 }
