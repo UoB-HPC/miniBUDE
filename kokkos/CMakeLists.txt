@@ -57,7 +57,7 @@ endif ()
 add_definitions(-DWG_SIZE=${WG_SIZE})
 
 set(DEBUG_OPTIONS -O2 -fno-omit-frame-pointer ${CXX_EXTRA_FLAGS})
-set(RELEASE_OPTIONS -Ofast -ffast-math -march=native -mtune=native ${CXX_EXTRA_FLAGS})
+set(RELEASE_OPTIONS -Ofast -ffast-math ${CXX_EXTRA_FLAGS})
 
 target_compile_options(bude PUBLIC "$<$<CONFIG:RelWithDebInfo>:${RELEASE_OPTIONS}>")
 target_compile_options(bude PUBLIC "$<$<CONFIG:Release>:${RELEASE_OPTIONS}>")
