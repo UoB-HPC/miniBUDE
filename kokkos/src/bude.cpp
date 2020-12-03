@@ -43,16 +43,16 @@ void fasten_main(
 		size_t group,
 		size_t ntypes, size_t nposes,
 		size_t natlig, size_t natpro,
-		Kokkos::View<Atom *> protein_molecule,
-		Kokkos::View<Atom *> ligand_molecule,
-		Kokkos::View<float *> transforms_0,
-		Kokkos::View<float *> transforms_1,
-		Kokkos::View<float *> transforms_2,
-		Kokkos::View<float *> transforms_3,
-		Kokkos::View<float *> transforms_4,
-		Kokkos::View<float *> transforms_5,
-		Kokkos::View<FFParams *> forcefield,
-		Kokkos::View<float *> etotals
+		const Kokkos::View<const Atom *> &protein_molecule,
+		const Kokkos::View<const Atom *> &ligand_molecule,
+		const Kokkos::View<const float *> &transforms_0,
+		const Kokkos::View<const float *> &transforms_1,
+		const Kokkos::View<const float *> &transforms_2,
+		const Kokkos::View<const float *> &transforms_3,
+		const Kokkos::View<const float *> &transforms_4,
+		const Kokkos::View<const float *> &transforms_5,
+		const Kokkos::View<const FFParams *> &forcefield,
+		const Kokkos::View<float *> &etotals
 );
 
 void printTimings(const Params &params, const TimePoint &start, const TimePoint &end, double poses_per_wi) {
@@ -206,15 +206,15 @@ std::vector<float> runKernel(Params params) {
 
 
 
-	Kokkos::View<Atom *> protein(params.protein.data(), params.protein.size());
-	Kokkos::View<Atom *> ligand(params.ligand.data(), params.ligand.size());
-	Kokkos::View<float *> transforms_0(params.poses[0].data(), params.poses[0].size());
-	Kokkos::View<float *> transforms_1(params.poses[1].data(), params.poses[1].size());
-	Kokkos::View<float *> transforms_2(params.poses[2].data(), params.poses[2].size());
-	Kokkos::View<float *> transforms_3(params.poses[3].data(), params.poses[3].size());
-	Kokkos::View<float *> transforms_4(params.poses[4].data(), params.poses[4].size());
-	Kokkos::View<float *> transforms_5(params.poses[5].data(), params.poses[5].size());
-	Kokkos::View<FFParams *> forcefield(params.forcefield.data(), params.forcefield.size());
+	Kokkos::View<const Atom *> protein(params.protein.data(), params.protein.size());
+	Kokkos::View<const Atom *> ligand(params.ligand.data(), params.ligand.size());
+	Kokkos::View<const float *> transforms_0(params.poses[0].data(), params.poses[0].size());
+	Kokkos::View<const float *> transforms_1(params.poses[1].data(), params.poses[1].size());
+	Kokkos::View<const float *> transforms_2(params.poses[2].data(), params.poses[2].size());
+	Kokkos::View<const float *> transforms_3(params.poses[3].data(), params.poses[3].size());
+	Kokkos::View<const float *> transforms_4(params.poses[4].data(), params.poses[4].size());
+	Kokkos::View<const float *> transforms_5(params.poses[5].data(), params.poses[5].size());
+	Kokkos::View<const FFParams *> forcefield(params.forcefield.data(), params.forcefield.size());
 	Kokkos::View<float *> results(energies.data(), energies.size());
 
 	const auto runKernel = [&](){

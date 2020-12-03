@@ -46,14 +46,14 @@ target_compile_options(bude
 
 if (NOT DEFINED WG_SIZE)
     message(STATUS "WG_SIZE unspecified, using source default (available with --help in the compiled binary)")
+else ()
+    if (NOT WG_SIZE MATCHES "^[0-9]+$")
+        message(FATAL_ERROR "WG_SIZE must be an integer, got ${WG_SIZE}")
+    else ()
+        add_definitions(-DWG_SIZE=${WG_SIZE})
+    endif ()
 endif ()
 
-
-if (NOT WG_SIZE MATCHES "^[0-9]+$")
-    message(FATAL_ERROR "WG_SIZE must be an integer, got ${WG_SIZE}")
-endif ()
-
-add_definitions(-DWG_SIZE=${WG_SIZE})
 
 set(DEBUG_OPTIONS -O2 -fno-omit-frame-pointer ${CXX_EXTRA_FLAGS})
 set(RELEASE_OPTIONS -Ofast -ffast-math ${CXX_EXTRA_FLAGS})

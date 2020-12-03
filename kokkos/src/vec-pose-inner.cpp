@@ -23,16 +23,16 @@ void fasten_main(
 		size_t group,
 		size_t ntypes, size_t nposes,
 		size_t natlig, size_t natpro,
-		Kokkos::View<Atom *> protein_molecule,
-		Kokkos::View<Atom *> ligand_molecule,
-		Kokkos::View<float *> transforms_0,
-		Kokkos::View<float *> transforms_1,
-		Kokkos::View<float *> transforms_2,
-		Kokkos::View<float *> transforms_3,
-		Kokkos::View<float *> transforms_4,
-		Kokkos::View<float *> transforms_5,
-		Kokkos::View<FFParams *> forcefield,
-		Kokkos::View<float *> etotals
+		const Kokkos::View<const Atom *> &protein_molecule,
+		const Kokkos::View<const Atom *> &ligand_molecule,
+		const Kokkos::View<const float *> &transforms_0,
+		const Kokkos::View<const float *> &transforms_1,
+		const Kokkos::View<const float *> &transforms_2,
+		const Kokkos::View<const float *> &transforms_3,
+		const Kokkos::View<const float *> &transforms_4,
+		const Kokkos::View<const float *> &transforms_5,
+		const Kokkos::View<const FFParams *> &forcefield,
+		const Kokkos::View<float *> &etotals
 ) {
 
 	float etot[WG_SIZE];
