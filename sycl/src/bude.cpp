@@ -318,14 +318,10 @@ std::vector<float> runKernel(Params params) {
 		h.fill(results.get_access<W>(h), 0.f);
 	});
 
+	queue.wait();
 	auto xferAllocEnd = std::chrono::high_resolution_clock::now();
 
-
-	queue.wait();
-
-	auto kernelStart = std::chrono::high_resolution_clock::now();
-
-	for (size_t i = 0; i < params.iterations; ++i) {
+	const auto runKernel = [&]() {
 		queue.submit([&](clsycl::handler &h) {
 			fasten_main(h,
 					params.wgSize,
@@ -343,9 +339,18 @@ std::vector<float> runKernel(Params params) {
 					results.get_access<RW>(h)
 			);
 		});
+	};
+
+	auto warmupStart = std::chrono::high_resolution_clock::now();
+	runKernel(); //warm up
+	queue.wait();
+	auto warmupEnd = std::chrono::high_resolution_clock::now();
+
+	auto kernelStart = std::chrono::high_resolution_clock::now();
+	for (size_t i = 0; i < params.iterations; ++i) {
+		runKernel();
 	}
 	queue.wait();
-
 	auto kernelEnd = std::chrono::high_resolution_clock::now();
 
 	clsycl::buffer<float> buffer(energies.data(), energies.size());
@@ -354,7 +359,8 @@ std::vector<float> runKernel(Params params) {
 
 	std::cout
 			<< "Context time:    " << ellapsedMillis(contextStart, contextEnd) << " ms\n"
-			<< "Xfer+Alloc time: " << ellapsedMillis(xferAllocStart, xferAllocEnd) << " ms\n" << std::endl;
+			<< "Xfer+Alloc time: " << ellapsedMillis(xferAllocStart, xferAllocEnd) << " ms\n"
+			<< "Warmup time:     " << ellapsedMillis(warmupStart, warmupEnd) << " ms\n" << std::endl;
 
 	printTimings(params, ellapsedMillis(kernelStart, kernelEnd), NUM_TD_PER_THREAD);
 	return energies;
