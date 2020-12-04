@@ -142,13 +142,24 @@ void runOpenMP(float *restrict results)
     forcefield[i] = params.forcefield[i];
   }
 
+
+  // warm up 1 iter
+#pragma omp parallel for
+    for (unsigned group = 0; group < (params.nposes/WGSIZE); group++)
+    {
+      fasten_main(params.natlig, params.natpro, protein, ligand,
+                  poses[0], poses[1], poses[2],
+                  poses[3], poses[4], poses[5],
+                  buffer, forcefield, group);
+    }
+
   double start = getTimestamp();
 
 #pragma omp parallel
   for (int itr = 0; itr < params.iterations; itr++)
   {
 #pragma omp for
-    for (unsigned group = 0; group < (params.nposes/WGSIZE/PPWI); group++)
+    for (unsigned group = 0; group < (params.nposes/WGSIZE); group++)
     {
       fasten_main(params.natlig, params.natpro, protein, ligand,
                   poses[0], poses[1], poses[2],
