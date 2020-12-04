@@ -1,6 +1,3 @@
-#ifndef PPWI
-#define PPWI 1
-#endif
 #ifndef WGSIZE
 #define WGSIZE 4
 #endif

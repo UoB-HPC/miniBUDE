@@ -25,7 +25,7 @@ struct
 double   getTimestamp();
 void     loadParameters(int argc, char *argv[]);
 void     freeParameters();
-void     printTimings(double start, double end, double poses_per_wi);
+void     printTimings(double start, double end);
 
 void     runOpenMP(float *energies);
 
@@ -119,18 +119,18 @@ void runOpenMP(float *restrict results)
 #pragma omp parallel
     for(int i = 0; i < params.nposes; i++){
       poses[p][i] = params.poses[p][i];
-    }  
+    }
   }
 
 #pragma omp parallel
   for(int i = 0; i < params.nposes; i++){
     buffer[i] = 0.f;
-  }  
+  }
 
 #pragma omp parallel
   for(int i = 0; i < params.natpro; i++){
     protein[i] = params.protein[i];
-  } 
+  }
 
 #pragma omp parallel
   for(int i = 0; i < params.natlig; i++){
@@ -140,7 +140,7 @@ void runOpenMP(float *restrict results)
  #pragma omp parallel
   for(int i = 0; i < params.ntypes; i++){
     forcefield[i] = params.forcefield[i];
-  } 
+  }
 
   double start = getTimestamp();
 
@@ -167,7 +167,7 @@ void runOpenMP(float *restrict results)
   free(buffer);
   for(int p = 0; p < 6; p++) free(poses[p]);
 
-  printTimings(start, end, PPWI);
+  printTimings(start, end);
 }
 
 int parseInt(const char *str)
@@ -284,16 +284,21 @@ void freeParameters()
     free(params.poses[i]);
 }
 
-void printTimings(double start, double end, double poses_per_wi)
+void printTimings(double start, double end)
 {
-  double ms = ((end-start)/params.iterations)*1e-3;
+  // Average time per iteration
+  double ms      = ((end-start)/params.iterations)*1e-3;
+  double runtime = ms * 1e-3;
 
   // Compute FLOP/s
-  double runtime   = ms*1e-3;
-  double ops_per_wi = 27*poses_per_wi
-    + params.natlig*(3 + 18*poses_per_wi + params.natpro*(11 + 30*poses_per_wi))
-    + poses_per_wi;
-  double total_ops     = ops_per_wi * (params.nposes/poses_per_wi);
+  double ops_per_wg = WGSIZE*27 +
+                      params.natlig * (
+                        2 +
+                        WGSIZE*18 +
+                        params.natpro * (10 + WGSIZE*30)
+                        ) +
+                      WGSIZE;
+  double total_ops  = ops_per_wg * (params.nposes/WGSIZE);
   double flops      = total_ops / runtime;
   double gflops     = flops / 1e9;
 
