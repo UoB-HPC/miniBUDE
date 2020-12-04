@@ -199,24 +199,31 @@ Params loadParameters(const std::vector<std::string> &args) {
 	return params;
 }
 
+template<typename T>
+ Kokkos::View<T *>mkView(const std::string &name, const std::vector<T> &xs) {
+	Kokkos::View<T *> view(name, xs.size());
+	auto mirror = Kokkos::create_mirror_view(view);
+	for (size_t i = 0; i < xs.size(); i++) mirror[i] = xs[i];
+	Kokkos::deep_copy(view, mirror);
+	return  view ;
+}
+
 std::vector<float> runKernel(Params params) {
 
 	std::vector<float> energies(params.nposes);
 
+	auto protein = mkView("protein", params.protein);
+	auto ligand = mkView("ligand", params.ligand);
+	auto transforms_0 = mkView("transforms_0", params.poses[0]);
+	auto transforms_1 = mkView("transforms_1", params.poses[1]);
+	auto transforms_2 = mkView("transforms_2", params.poses[2]);
+	auto transforms_3 = mkView("transforms_3", params.poses[3]);
+	auto transforms_4 = mkView("transforms_4", params.poses[4]);
+	auto transforms_5 = mkView("transforms_5", params.poses[5]);
+	auto forcefield = mkView("forcefield", params.forcefield);
+	Kokkos::View<float *>  results("results", energies.size());
 
-
-	Kokkos::View<const Atom *> protein(params.protein.data(), params.protein.size());
-	Kokkos::View<const Atom *> ligand(params.ligand.data(), params.ligand.size());
-	Kokkos::View<const float *> transforms_0(params.poses[0].data(), params.poses[0].size());
-	Kokkos::View<const float *> transforms_1(params.poses[1].data(), params.poses[1].size());
-	Kokkos::View<const float *> transforms_2(params.poses[2].data(), params.poses[2].size());
-	Kokkos::View<const float *> transforms_3(params.poses[3].data(), params.poses[3].size());
-	Kokkos::View<const float *> transforms_4(params.poses[4].data(), params.poses[4].size());
-	Kokkos::View<const float *> transforms_5(params.poses[5].data(), params.poses[5].size());
-	Kokkos::View<const FFParams *> forcefield(params.forcefield.data(), params.forcefield.size());
-	Kokkos::View<float *> results(energies.data(), energies.size());
-
-	const auto runKernel = [&](){
+	const auto runKernel = [&]() {
 		fasten_main(
 				params.ntypes, params.nposes,
 				params.natlig, params.natpro,
@@ -237,6 +244,12 @@ std::vector<float> runKernel(Params params) {
 	Kokkos::fence();
 	auto end = std::chrono::high_resolution_clock::now();
 
+	auto result_mirror = Kokkos::create_mirror_view(results);
+	Kokkos::deep_copy(result_mirror , results);
+	for (size_t i = 0; i < results.size(); i++) {
+		energies[i] = result_mirror[i];
+	}
+
 	printTimings(params, start, end, 1);
 	return energies;
 }
@@ -254,7 +267,7 @@ int main(int argc, char *argv[]) {
 	std::cout << "Proteins  : " << params.natpro << std::endl;
 	std::cout << "Deck      : " << params.deckDir << std::endl;
 	std::cout << "WG_SIZE   : " << WG_SIZE << std::endl;
-
+	std::cout << "KokkosImpl: " << typeid (Kokkos::DefaultExecutionSpace).name() << std::endl;
 	Kokkos::initialize(argc, argv);
 
 	if (Kokkos::hwloc::available()) {
