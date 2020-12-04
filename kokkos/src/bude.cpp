@@ -40,7 +40,6 @@ struct Params {
 };
 
 void fasten_main(
-		size_t group,
 		size_t ntypes, size_t nposes,
 		size_t natlig, size_t natpro,
 		const Kokkos::View<const Atom *> &protein_molecule,
@@ -218,15 +217,13 @@ std::vector<float> runKernel(Params params) {
 	Kokkos::View<float *> results(energies.data(), energies.size());
 
 	const auto runKernel = [&](){
-		Kokkos::parallel_for("fasten", (params.nposes / WG_SIZE), KOKKOS_LAMBDA(const size_t group) {
-			fasten_main(group,
-					params.ntypes, params.nposes,
-					params.natlig, params.natpro,
-					protein, ligand,
-					transforms_0, transforms_1, transforms_2,
-					transforms_3, transforms_4, transforms_5,
-					forcefield, results);
-		});
+		fasten_main(
+				params.ntypes, params.nposes,
+				params.natlig, params.natpro,
+				protein, ligand,
+				transforms_0, transforms_1, transforms_2,
+				transforms_3, transforms_4, transforms_5,
+				forcefield, results);
 	};
 
 	// warm up
@@ -267,7 +264,7 @@ int main(int argc, char *argv[]) {
 				<< std::endl;
 	}
 #if defined(KOKKOS_ENABLE_CUDA)
-	Kokkos::Cuda::print_configuration(msg);
+	Kokkos::Cuda::print_configuration(std::cout);
 #endif
 
 	auto energies = runKernel(params);

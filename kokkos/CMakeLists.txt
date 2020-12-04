@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
-project(bude_sycl)
+project(bude_kokkos)
 SET(CMAKE_VERBOSE_MAKEFILE OFF)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -56,7 +56,7 @@ endif ()
 
 
 set(DEBUG_OPTIONS -O2 -fno-omit-frame-pointer ${CXX_EXTRA_FLAGS})
-set(RELEASE_OPTIONS -Ofast -ffast-math ${CXX_EXTRA_FLAGS})
+set(RELEASE_OPTIONS -O3 -ffast-math ${CXX_EXTRA_FLAGS}) #nvcc can't handle -Ofast, must be -O<n>
 
 target_compile_options(bude PUBLIC "$<$<CONFIG:RelWithDebInfo>:${RELEASE_OPTIONS}>")
 target_compile_options(bude PUBLIC "$<$<CONFIG:Release>:${RELEASE_OPTIONS}>")
