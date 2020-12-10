@@ -115,29 +115,29 @@ void runOpenMP(float *restrict results)
   float    *restrict buffer = malloc(sizeof(float) * params.nposes);
 
   for(int p = 0; p < 6; p++){
-  poses[p] = malloc(sizeof(float) * params.nposes);
-#pragma omp parallel
+    poses[p] = malloc(sizeof(float) * params.nposes);
+#pragma omp parallel for
     for(int i = 0; i < params.nposes; i++){
       poses[p][i] = params.poses[p][i];
     }
   }
 
-#pragma omp parallel
+#pragma omp parallel for
   for(int i = 0; i < params.nposes; i++){
     buffer[i] = 0.f;
   }
 
-#pragma omp parallel
+#pragma omp parallel for
   for(int i = 0; i < params.natpro; i++){
     protein[i] = params.protein[i];
   }
 
-#pragma omp parallel
+#pragma omp parallel for
   for(int i = 0; i < params.natlig; i++){
     ligand[i] = params.ligand[i];
   }
 
- #pragma omp parallel
+#pragma omp parallel for
   for(int i = 0; i < params.ntypes; i++){
     forcefield[i] = params.forcefield[i];
   }
