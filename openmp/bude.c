@@ -273,16 +273,28 @@ void printTimings(double start, double end)
   double runtime = ms * 1e-3;
 
   // Compute FLOP/s
-  double ops_per_wg = WGSIZE*27 +
+  unsigned long ops_per_wg = WGSIZE * 27ul +
                       params.natlig * (
-                        2 +
-                        WGSIZE*18 +
-                        params.natpro * (10 + WGSIZE*30)
+                        2ul +
+                        WGSIZE*18ul +
+                        params.natpro * (10ul + WGSIZE*30ul)
                         ) +
                       WGSIZE;
-  double total_ops  = ops_per_wg * (params.nposes/WGSIZE);
+  unsigned long total_ops  = ops_per_wg * (params.nposes/WGSIZE);
   double flops      = total_ops / runtime;
   double gflops     = flops / 1e9;
+
+  // Compute bytes
+  unsigned long bytes_per_wg = 4ul * (
+      WGSIZE * 22ul +
+      params.natlig * WGSIZE * 24ul +
+      params.natlig * 2ul +
+      params.natlig * params.natpro * 7ul +
+      params.natlig * params.natpro * WGSIZE * 9ul +
+      WGSIZE * 2ul
+      );
+  unsigned long bytes = bytes_per_wg * (params.nposes/WGSIZE);
+  double oi = ops_per_wg / (double)bytes_per_wg;
 
   double total_finsts = 25.0 * params.natpro * params.natlig * params.nposes;
   double finsts = total_finsts / runtime;
@@ -299,6 +311,8 @@ void printTimings(double start, double end)
   printf("- Average time:   %7.3lf ms\n", ms);
   printf("- Interactions/s: %7.3lf billion\n", (interactions_per_sec / 1e9));
   printf("- GFLOP/s:        %7.3lf\n", gflops);
+  printf("- Bytes:          %7lu\n", bytes);
+  printf("- OI:             %7.3lf\n", oi);
   printf("- GFInst/s:       %7.3lf\n", gfinsts);
 }
 
