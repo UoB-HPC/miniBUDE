@@ -31,21 +31,38 @@ NV_FLAGS  = -O3 --ptxas-options="-v" -use_fast_math \
 		-gencode arch=compute_35,code=sm_35 -restrict \
 		-gencode arch=compute_60,code=sm_60 -restrict \
 		-gencode arch=compute_70,code=sm_70 -restrict
-# On V100, -DUSE_SHARED introduces correctness issues, -maxrregcount lower performance
-LDFLAGS += -L$(CUDA_PATH)/lib64 -lcudart
+
+HIP_FLAGS = -O3
 
 OBJ  = $(patsubst %.cu,%.o,$(wildcard *.cu))
 OBJ += $(patsubst %.c,%.o,$(wildcard *.c))
 
-bude: Makefile $(OBJ)
-	$(CC) $(CFLAGS) $(OBJ) -o bude $(LDFLAGS)
+ifdef USE_HIP
+LINK = hipcc
+else
+LINK = $(CC)
 
-%.o: %.cu Makefile make.deps
-	nvcc $(NV_FLAGS) -c $<
+# On V100, -DUSE_SHARED introduces correctness issues, -maxrregcount lower performance
+LDFLAGS += -L$(CUDA_PATH)/lib64 -lcudart
+endif
+
+bude: Makefile $(OBJ)
+	$(LINK) $(CFLAGS) $(OBJ) -o bude $(LDFLAGS)
+
 %.o: %.c Makefile make.deps
 	$(CC) $(CFLAGS) -c $<
+
+ifdef USE_HIP
+%.cpp: %.cu
+	hipify-perl $< > $@
+%.o: %.cpp Makefile make.deps
+	hipcc $(HIP_FLAGS) -c $<
+else
+%.o: %.cu Makefile make.deps
+	nvcc $(NV_FLAGS) -c $<
+endif
 
 .PHONY: clean
 
 clean:
-	rm -f bude *.ptx *.cub *.lst *.o *.optrpt
+	rm -f bude bude_cuda.cpp *.ptx *.cub *.lst *.o *.optrpt
