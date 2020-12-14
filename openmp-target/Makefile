@@ -38,7 +38,7 @@ ARCH_INTEL  = native
 ARCH_NVIDIA = sm_70
 
 TFLAGS_AMD_aomp = -fopenmp -fopenmp-targets=amdgcn-amd-amdhsa -Xopenmp-target=amdgcn-amd-amdhsa
-TFLAGS_AMD_gcc  = -foffload=amdgcn-amdhsa='-march=$(ARCH_AMD_aomp)' -foffload=-lm
+TFLAGS_AMD_gcc  = -fopenmp -foffload=amdgcn-amdhsa='-march=$(ARCH_AMD_aomp)' -foffload=-lm
 
 TFLAGS_AMD    = $(TFLAGS_AMD_$(CC))
 TFLAGS_INTEL  = -fiopenmp -fopenmp-targets=spir64
