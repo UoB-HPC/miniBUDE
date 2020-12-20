@@ -65,22 +65,25 @@ void fasten_main(
 		clsycl::accessor<float, 1, RW, Global> etotals);
 
 
-double ellapsedMillis( const TimePoint &start, const TimePoint &end){
+double elapsedMillis( const TimePoint &start, const TimePoint &end){
 	auto elapsedNs = static_cast<double>(
 			std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
 	return elapsedNs * 1e-6;
 }
 
-void printTimings(const Params &params, double millis, double poses_per_wi) {
+void printTimings(const Params &params, double millis) {
 
-	auto ms = ((millis) / params.iterations);
+	// Average time per iteration
+	double ms = (millis / params.iterations);
+	double runtime = ms * 1e-3;
 
 	// Compute FLOP/s
-	double runtime = ms * 1e-3;
-	double ops_per_wi = 27 * poses_per_wi
-	                    + params.natlig * (3 + 18 * poses_per_wi + params.natpro * (11 + 30 * poses_per_wi))
-	                    + poses_per_wi;
-	double total_ops = ops_per_wi * (params.nposes / poses_per_wi);
+	double ops_per_wg = NUM_TD_PER_THREAD * 27 +
+			params.natlig * (2 +
+					NUM_TD_PER_THREAD * 18 +
+					params.natpro * (10 + NUM_TD_PER_THREAD * 30)
+			) + NUM_TD_PER_THREAD;
+	double total_ops = ops_per_wg * ((double) params.nposes / NUM_TD_PER_THREAD);
 	double flops = total_ops / runtime;
 	double gflops = flops / 1e9;
 
@@ -88,10 +91,7 @@ void printTimings(const Params &params, double millis, double poses_per_wi) {
 	double finsts = total_finsts / runtime;
 	double gfinsts = finsts / 1e9;
 
-	double interactions =
-			(double) params.nposes
-			* (double) params.natlig
-			* (double) params.natpro;
+	double interactions = (double) params.nposes * (double) params.natlig * (double) params.natpro;
 	double interactions_per_sec = interactions / runtime;
 
 	// Print stats
@@ -358,11 +358,11 @@ std::vector<float> runKernel(Params params) {
 	queue.wait();
 
 	std::cout
-			<< "Context time:    " << ellapsedMillis(contextStart, contextEnd) << " ms\n"
-			<< "Xfer+Alloc time: " << ellapsedMillis(xferAllocStart, xferAllocEnd) << " ms\n"
-			<< "Warmup time:     " << ellapsedMillis(warmupStart, warmupEnd) << " ms\n" << std::endl;
+			<< "Context time:    " << elapsedMillis(contextStart, contextEnd) << " ms\n"
+			<< "Xfer+Alloc time: " << elapsedMillis(xferAllocStart, xferAllocEnd) << " ms\n"
+			<< "Warmup time:     " << elapsedMillis(warmupStart, warmupEnd) << " ms\n" << std::endl;
 
-	printTimings(params, ellapsedMillis(kernelStart, kernelEnd), NUM_TD_PER_THREAD);
+	printTimings(params, elapsedMillis(kernelStart, kernelEnd));
 	return energies;
 }
 

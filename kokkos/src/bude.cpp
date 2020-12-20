@@ -54,18 +54,25 @@ void fasten_main(
 		const Kokkos::View<float *> &etotals
 );
 
-void printTimings(const Params &params, const TimePoint &start, const TimePoint &end, double poses_per_wi) {
-
+double elapsedMillis( const TimePoint &start, const TimePoint &end){
 	auto elapsedNs = static_cast<double>(
 			std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
-	double ms = ((elapsedNs) / params.iterations) * 1e-6;
+	return elapsedNs * 1e-6;
+}
+
+void printTimings(const Params &params, double millis) {
+
+	// Average time per iteration
+	double ms = (millis / params.iterations);
+	double runtime = ms * 1e-3;
 
 	// Compute FLOP/s
-	double runtime = ms * 1e-3;
-	double ops_per_wi = 27 * poses_per_wi
-			+ params.natlig * (3 + 18 * poses_per_wi + params.natpro * (11 + 30 * poses_per_wi))
-			+ poses_per_wi;
-	double total_ops = ops_per_wi * (params.nposes / poses_per_wi);
+	double ops_per_wg = WG_SIZE * 27 +
+			params.natlig * (2 +
+					WG_SIZE * 18 +
+					params.natpro * (10 + WG_SIZE * 30)
+			) + WG_SIZE;
+	double total_ops = ops_per_wg * ((double) params.nposes / WG_SIZE);
 	double flops = total_ops / runtime;
 	double gflops = flops / 1e9;
 
@@ -73,16 +80,13 @@ void printTimings(const Params &params, const TimePoint &start, const TimePoint 
 	double finsts = total_finsts / runtime;
 	double gfinsts = finsts / 1e9;
 
-	double interactions =
-			(double) params.nposes
-					* (double) params.natlig
-					* (double) params.natpro;
+	double interactions = (double) params.nposes * (double) params.natlig * (double) params.natpro;
 	double interactions_per_sec = interactions / runtime;
 
 	// Print stats
 	std::cout.precision(3);
 	std::cout << std::fixed;
-	std::cout << "- Total time:     " << (elapsedNs * 1e-6) << " ms\n";
+	std::cout << "- Kernel time:    " << (millis) << " ms\n";
 	std::cout << "- Average time:   " << ms << " ms\n";
 	std::cout << "- Interactions/s: " << (interactions_per_sec / 1e9) << " billion\n";
 	std::cout << "- GFLOP/s:        " << gflops << "\n";
@@ -250,7 +254,7 @@ std::vector<float> runKernel(Params params) {
 		energies[i] = result_mirror[i];
 	}
 
-	printTimings(params, start, end, 1);
+	printTimings(params, elapsedMillis(start, end));
 	return energies;
 }
 
