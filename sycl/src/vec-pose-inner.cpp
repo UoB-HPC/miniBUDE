@@ -1,3 +1,4 @@
+#include <cmath>
 #include "bude.h"
 
 #define ZERO    0.0f
@@ -167,15 +168,20 @@ void fasten_main(
 
 	} else {
 
-		size_t global = std::ceil((nposes) / static_cast<double> (NUM_TD_PER_THREAD));
-		global = wgSize * std::ceil(static_cast<double> (global) / wgSize);
+		size_t global =  ceil((nposes) / static_cast<double> (NUM_TD_PER_THREAD));
+		global = wgSize * ceil(static_cast<double> (global) / wgSize);
 
 		clsycl::accessor<FFParams, 1, RW, Local> local_forcefield(clsycl::range<1>(ntypes), h);
 
 
 		h.parallel_for<class bude_kernel_ndrange>(clsycl::nd_range<1>(global, wgSize), [=](clsycl::nd_item<1> item) {
 
+			#ifdef USE_PRE_SYCL121R3
+			const size_t lid = item.get_local(0);
+			#else
 			const size_t lid = item.get_local_id(0);
+			#endif
+
 			const size_t gid = item.get_group(0);
 			const size_t lrange = item.get_local_range(0);
 
@@ -222,7 +228,11 @@ void fasten_main(
 				etot[i] = ZERO;
 			}
 
+			#ifdef USE_PRE_SYCL121R3
+			event.wait();
+			#else
 			item.wait_for(event);
+			#endif
 
 			// Loop over ligand atoms
 			size_t il = 0;
