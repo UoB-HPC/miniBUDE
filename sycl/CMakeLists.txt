@@ -1,11 +1,20 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
 project(bude_sycl)
-SET(CMAKE_VERBOSE_MAKEFILE OFF)
+SET(CMAKE_VERBOSE_MAKEFILE ON)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+
+#set(SYCL_RUNTIME DPCPP)
+#set(DPCPP_BIN /home/tom/sycl_performance_history/dpcpp/dpcpp-compiler.20210106/bin/clang++)
+#set(DPCPP_INCLUDE /home/tom/sycl_performance_history/dpcpp/dpcpp-compiler.20210106/include/sycl/)
+#set(CXX_EXTRA_FLAGS -fsycl)
+
+set(SYCL_RUNTIME COMPUTECPP)
+set(ComputeCpp_DIR /home/tom/Desktop/computecpp_archive/ComputeCpp-CE-1.1.3-CentOS-x86_64/)
 
 if (SYCL_RUNTIME)
 
@@ -37,8 +46,8 @@ if (SYCL_RUNTIME)
         set(OpenCL_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
         add_definitions(-DCL_TARGET_OPENCL_VERSION=220)
         add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
-        set(COMPUTECPP_USER_FLAGS -O3 -no-serial-memop)
         find_package(ComputeCpp REQUIRED)
+        set(COMPUTECPP_USER_FLAGS -O3 -no-serial-memop)
     elseif (${SYCL_RUNTIME} STREQUAL "DPCPP")
 
         if (NOT DPCPP_BIN)
