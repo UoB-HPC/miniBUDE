@@ -373,6 +373,11 @@ int main(int argc, char *argv[]) {
 
 //	std::cout << "Parameters:\n" << params << std::endl;
 	std::cout << "Device    : " << params.device.get_info<clsycl::info::device::name>() << std::endl;
+	std::cout << "\tType    : " << deviceName(params.device.get_info<clsycl::info::device::device_type>()) << std::endl;
+	std::cout << "\tProfile : " << params.device.get_info<clsycl::info::device::profile>() << std::endl;
+	std::cout << "\tVersion : " << params.device.get_info<clsycl::info::device::version>() << std::endl;
+	std::cout << "\tVendor  : " << params.device.get_info<clsycl::info::device::vendor>() << std::endl;
+	std::cout << "\tDriver  : " << params.device.get_info<clsycl::info::device::driver_version>() << std::endl;
 	std::cout << "Poses     : " << params.nposes << std::endl;
 	std::cout << "Iterations: " << params.iterations << std::endl;
 	std::cout << "Ligands   : " << params.natlig << std::endl;
