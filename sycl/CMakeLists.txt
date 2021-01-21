@@ -7,6 +7,10 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(SYCL_RUNTIME COMPUTECPP)
+set(ComputeCpp_DIR /home/tom/Desktop/computecpp_archive/ComputeCpp-CE-2.3.0-x86_64-linux-gnu/)
+set(DISABLE_ND_RANGE ON)
+
 if (SYCL_RUNTIME)
 
     list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
@@ -16,6 +20,7 @@ if (SYCL_RUNTIME)
         if (NOT HIPSYCL_INSTALL_DIR)
             message(FATAL_ERROR "HIPSYCL_INSTALL_DIR is undefined")
         endif ()
+        set(CMAKE_CXX_STANDARD 17)
         set(hipSYCL_DIR ${HIPSYCL_INSTALL_DIR}/lib/cmake)
         find_package(hipSYCL CONFIG REQUIRED)
         set(EXTRA_FLAGS -Wno-sign-compare -Wno-stringop-truncation)
