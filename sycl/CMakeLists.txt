@@ -99,8 +99,12 @@ endif ()
 
 add_definitions(-DNUM_TD_PER_THREAD=${NUM_TD_PER_THREAD})
 
-if (DEFINED USE_PRE_SYCL121R3)
+if (USE_PRE_SYCL121R3)
     add_definitions(-DUSE_PRE_SYCL121R3)
+endif ()
+
+if (DISABLE_ND_RANGE)
+    add_definitions(-DDISABLE_ND_RANGE)
 endif ()
 
 set(DEBUG_OPTIONS -O2 -fno-omit-frame-pointer ${CXX_EXTRA_FLAGS})

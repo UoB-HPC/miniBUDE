@@ -167,7 +167,7 @@ void fasten_main(
 		});
 
 	} else {
-
+		#ifndef DISABLE_ND_RANGE
 		size_t global =  ceil((nposes) / static_cast<double> (NUM_TD_PER_THREAD));
 		global = wgSize * ceil(static_cast<double> (global) / wgSize);
 
@@ -329,6 +329,9 @@ void fasten_main(
 			}
 
 		});
+		#else
+		fprintf(stderr, "Error: DISABLE_ND_RANGE defined so nd_range based kernel is excluded\n");
+		#endif
 	}
 
 
