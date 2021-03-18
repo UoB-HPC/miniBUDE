@@ -25,7 +25,7 @@
 
 #define REF_NPOSES 65536
 
-#define FILE_KERNEL     "budeMultiTD.cl"
+#define FILE_KERNEL     "budeMultiTD_no_nd.cl"
 
 // Energy evaluation parameters
 #define CNSTNT   45.0f
