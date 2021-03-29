@@ -8,7 +8,7 @@ MAKEFLAGS += --warn-undefined-variables --no-builtin-rules
 # -------
 
 ifndef COMPILER
-$(warning COMPILER not set (use ARM, CLANG, CRAY, GNU, or INTEL))
+$(warning COMPILER not set (use ARM, CLANG, CRAY, FUIJTSU, GNU, or INTEL))
 COMPILER=GNU
 endif
 
@@ -38,18 +38,20 @@ endif
 
 # -------
 
-CC_ARM    = armclang
-CC_CLANG  = clang
-CC_CRAY   = cc
-CC_GNU    = gcc
-CC_INTEL  = icc
+CC_ARM     = armclang
+CC_CLANG   = clang
+CC_CRAY    = cc
+CC_FUJITSU = fcc
+CC_GNU     = gcc
+CC_INTEL   = icc
 CC = $(CC_$(COMPILER))
 
-CFLAGS_ARM   = -std=c99 -Wall -Ofast -ffast-math -fopenmp -fsimdmath -$(ARCHFLAG)=$(ARCH)
-CFLAGS_CLANG = -std=c99 -Wall -Ofast -ffast-math -fopenmp -$(ARCHFLAG)=$(ARCH) $(if $(AVX512),-mprefer-vector-width=512)
-CFLAGS_CRAY  = -O3 -homp -hfp4 -haggress -hflex_mp=tolerant -hvector3 -hscalar3 -Gfast
-CFLAGS_GNU   = -std=c99 -Wall -Ofast -ffast-math -fopenmp -$(ARCHFLAG)=$(ARCH) $(if $(AVX512),-mprefer-vector-width=512)
-CFLAGS_INTEL = -std=c99 -Wall -Ofast -ffast-math -fopenmp -$(ARCHFLAG)=$(ARCH) $(if $(AVX512),-qopt-zmm-usage=high)
+CFLAGS_ARM     = -std=c99 -Wall -Ofast -ffast-math -fopenmp -fsimdmath -$(ARCHFLAG)=$(ARCH)
+CFLAGS_CLANG   = -std=c99 -Wall -Ofast -ffast-math -fopenmp -$(ARCHFLAG)=$(ARCH) $(if $(AVX512),-mprefer-vector-width=512)
+CFLAGS_CRAY    = -O3 -homp -hfp4 -haggress -hflex_mp=tolerant -hvector3 -hscalar3 -Gfast
+CFLAGS_FUJITSU = -Nclang -std=c99 -Wall -Ofast -ffast-math -fopenmp -$(ARCHFLAG)=$(ARCH) -mllvm -force-vector-interleave=4
+CFLAGS_GNU     = -std=c99 -Wall -Ofast -ffast-math -fopenmp -$(ARCHFLAG)=$(ARCH) $(if $(AVX512),-mprefer-vector-width=512)
+CFLAGS_INTEL   = -std=c99 -Wall -Ofast -ffast-math -fopenmp -$(ARCHFLAG)=$(ARCH) $(if $(AVX512),-qopt-zmm-usage=high)
 CFLAGS = $(CFLAGS_$(COMPILER)) -DWGSIZE=$(WGSIZE)
 
 LDFLAGS = -lm
