@@ -7,35 +7,44 @@ This is an implementation of BUDE using Kokkos.
 This implementation uses CMake.
 First, generate a build:
 
-    cmake -Bbuild -H. -DCMAKE_BUILD_TYPE=Release
+```shell
+> cmake -Bbuild -H. -DCMAKE_BUILD_TYPE=Release
+```
 
 Flags:
 
 * `CXX_EXTRA_FLAGS`: `STRING`, appends extra flags that will be passed on to the compiler, applies to all configs
 * `CXX_EXTRA_LINKER_FLAGS`: `STRING`, appends extra linker flags (the comma separated list after the `-Wl` flag) to the linker; applies to all configs
 * `KOKKOS_IN_TREE`: `STRING`, use a specific Kokkos **source** directory for an in-tree build where Kokkos and the project is compiled together.
+  * `FORWARD_CXX_EXTRA_FLAGS_TO_KOKKOS` : `ON|OFF`, whether to forward `CXX_EXTRA_FLAGS` when building Kokkos. This is `OFF` by default as Kokkos has a set of tested flags for each compiler. 
 * `Kokkos_ROOT`: `STRING`, path to the local Kokkos installation, this is optional and mutually exclusive with `KOKKOS_IN_TREE`.  
 * `DEFAULT_WGSIZE`: `INGEGER`, sets the [block size](#block-size). Defaults to 64.
 
+Compilers can be specified via the usual CMake options, for example:
 
-    cmake -Bbuild -H.  \
+```shell
+> cmake -Bbuild -H.  \
     -DCMAKE_C_COMPILER=/nfs/software/x86_64/gcc/9.1.0/bin/gcc \
     -DCMAKE_CXX_COMPILER=/nfs/software/x86_64/gcc/9.1.0/bin/g++ \
     -DCMAKE_BUILD_TYPE=Release
-
+```
 
 **IMPORTANT:** If need to specify [Kokkos flags](https://github.com/kokkos/kokkos/blob/master/BUILD.md#kokkos-keyword-listing) at build-time, you must use the `KOKKOS_IN_TREE` option. For example:
 
-    cmake -Bbuild -H.  \
+```shell
+> cmake -Bbuild -H.  \
     -DKOKKOS_IN_TREE=<path_to_kokkos_src> \
     -DKokkos_ENABLE_OPENMP=ON \
     -DKokkos_ARCH_ZEN2=ON \
     -DKokkos_ENABLE_AGGRESSIVE_VECTORIZATION=ON \
     -DCMAKE_BUILD_TYPE=Release 
+```
 
 Proceed with compiling:
 
-    cmake --build build --target bude --config Release -j $(nproc)
+```shell
+> cmake --build build --target bude --config Release -j $(nproc)
+```
 
 The binary can be found at `build/bude`.
 

@@ -12,6 +12,12 @@ cmake_policy(SET CMP0074 NEW) #see https://github.com/kokkos/kokkos/blob/master/
 
 if (KOKKOS_IN_TREE)
     message(STATUS "Building using in-tree kokkos source at `${KOKKOS_IN_TREE}`")
+    if(FORWARD_CXX_EXTRA_FLAGS_TO_KOKKOS)
+        message(STATUS "Forwarding CXX_EXTRA_FLAGS to Kokkos...")
+        set(CMAKE_CXX_FLAGS ${CXX_EXTRA_FLAGS})
+    else()
+        message(STATUS "Not forwarding CXX_EXTRA_FLAGS to Kokkos by default, set FORWARD_CXX_EXTRA_FLAGS_TO_KOKKOS=ON to override")
+    endif()
     add_subdirectory(${KOKKOS_IN_TREE} ${CMAKE_BINARY_DIR}/kokkos)
     add_definitions(-DKOKKOS_IN_TREE=${KOKKOS_IN_TREE})
 else ()
