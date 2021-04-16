@@ -14,6 +14,7 @@ if (KOKKOS_IN_TREE)
     message(STATUS "Building using in-tree kokkos source at `${KOKKOS_IN_TREE}`")
     if(FORWARD_CXX_EXTRA_FLAGS_TO_KOKKOS)
         message(STATUS "Forwarding CXX_EXTRA_FLAGS to Kokkos...")
+        set(OLD_CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}") # save it for now
         set(CMAKE_CXX_FLAGS ${CXX_EXTRA_FLAGS})
     else()
         message(STATUS "Not forwarding CXX_EXTRA_FLAGS to Kokkos by default, set FORWARD_CXX_EXTRA_FLAGS_TO_KOKKOS=ON to override")
@@ -67,6 +68,10 @@ set(RELEASE_OPTIONS -O3 -ffast-math ${CXX_EXTRA_FLAGS}) #nvcc can't handle -Ofas
 target_compile_options(bude PUBLIC "$<$<CONFIG:RelWithDebInfo>:${RELEASE_OPTIONS}>")
 target_compile_options(bude PUBLIC "$<$<CONFIG:Release>:${RELEASE_OPTIONS}>")
 target_compile_options(bude PUBLIC "$<$<CONFIG:Debug>:${DEBUG_OPTIONS}>")
+
+if(DEFINED OLD_CMAKE_CXX_FLAGS) # restore if overwritten before, as required by Kokkos to pick up CXX_EXTRA_FLAGS as CMAKE_CXX_FLAGS
+    set(CMAKE_CXX_FLAGS ${OLD_CMAKE_CXX_FLAGS})
+endif()
 
 target_link_libraries(bude Kokkos::kokkos)
 
