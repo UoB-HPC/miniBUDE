@@ -1,6 +1,6 @@
-# BUDE Kokkos
+# miniBUDE Kokkos
 
-This is an implementation of BUDE using Kokkos.
+This is an implementation of miniBUDE using Kokkos.
 
 ## Building
 

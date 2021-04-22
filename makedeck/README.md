@@ -1,6 +1,6 @@
-# BUDE makedeck
+# miniBUDE makedeck
 
-This program generates input decks for the BUDE benchmark from a set of mol2 and bhff files.
+This program generates input decks for miniBUDE from a set of mol2 and bhff files.
 
 ## Building
 
@@ -55,7 +55,7 @@ params.txt # contains original program arguments used to generate this deck
 ref_energies.out # contains reference energies used for verification
 ```
 
-The input deck directory can then be specified in all BUDE implementations:
+The input deck directory can then be specified in all miniBUDE implementations:
 
     ./bude --deck output
 

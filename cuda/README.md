@@ -1,6 +1,6 @@
-# BUDE CUDA
+# miniBUDE CUDA
 
-This is a GPU implementation of BUDE using CUDA.
+This is a GPU implementation of miniBUDE using CUDA.
 
 ## Building
 

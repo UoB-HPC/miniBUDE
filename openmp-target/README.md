@@ -1,6 +1,6 @@
-# BUDE OpenMP Target
+# miniBUDE OpenMP Target
 
-This is a GPU implementation of BUDE using OpenMP target.
+This is a GPU implementation of miniBUDE using OpenMP target.
 
 ## Building
 

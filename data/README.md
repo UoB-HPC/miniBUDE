@@ -1,4 +1,4 @@
-# BUDE Benchmark Data
+# miniBUDE Benchmark Data
 
 This directory contains input data and reference output.
 Each sub-directory is a self-contained test case.

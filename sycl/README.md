@@ -1,6 +1,6 @@
-# BUDE SYCL
+# miniBUDE SYCL
 
-This is a CPU implementation of BUDE using SYCL.
+This is a CPU implementation of miniBUDE using SYCL.
 
 ## Building
 

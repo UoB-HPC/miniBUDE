@@ -1,6 +1,6 @@
-# BUDE OpenCL
+# miniBUDE OpenCL
 
-This is a GPU implementation of BUDE using OpenCL.
+This is a GPU implementation of miniBUDE using OpenCL.
 
 ## Building
 

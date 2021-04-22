@@ -1,6 +1,6 @@
-# BUDE OpenMP
+# miniBUDE OpenMP
 
-This is a CPU implementation of BUDE using OpenMP 3.
+This is a CPU implementation of miniBUDE using OpenMP 3.
 
 ## Building
 

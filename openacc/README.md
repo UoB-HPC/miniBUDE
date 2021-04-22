@@ -1,6 +1,6 @@
-# BUDE OpenACC
+# miniBUDE OpenACC
 
-This is a GPU implementation of BUDE using OpenACC.
+This is a GPU implementation of miniBUDE using OpenACC.
 
 ## Building
 
