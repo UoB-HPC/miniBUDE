@@ -11,7 +11,7 @@
 #endif
 
 #ifndef WG_SIZE
-#define WG_SIZE 128
+#define WG_SIZE 256
 #endif
 
 #define DEFAULT_ITERS  8

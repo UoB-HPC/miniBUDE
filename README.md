@@ -11,16 +11,17 @@ The top-level `makedeck` directory contains an input deck generation program and
 Each other subdirectory contains a separate implementation:
 
 - [OpenMP](openmp/) for CPUs
-- [SYCL](sycl/) for CPUs
 - [OpenMP target](openmp-target/) for GPUs
-- [OpenCL](opencl/) for GPUs
 - [CUDA](cuda/) for GPUs
+- [OpenCL](opencl/) for GPUs
 - [OpenACC](openacc/) for GPUs
+- [SYCL](sycl/) for CPUs and GPUs
+- [Kokkos](kokkos/) for CPUs and GPUs
 
 ## Building
 
 To build with the default options, type `make` in an implementation directory.
-There are options to choose the compiler used and the architecture targetted.
+There are options to choose the compiler used and the architecture targeted.
 
 Refer to each implementation's README for further build instructions.
 
