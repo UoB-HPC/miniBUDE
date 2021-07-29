@@ -11,3 +11,5 @@ energies.dat
 *.bak
 *.ori
 *.old
+
+.vscode

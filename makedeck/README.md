@@ -1,6 +1,7 @@
 # miniBUDE makedeck
 
 This program generates input decks for miniBUDE from a set of mol2 and bhff files.
+Sample mol2 and bhff files can be found in `raw/*`.
 
 ## Building
 

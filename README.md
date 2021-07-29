@@ -39,7 +39,8 @@ Refer to each implementation's README for further run instructions.
 Two input decks are included in this repository:
 
 * `bm1` is a short benchmark (~100 ms/iteration on a 64-core ThunderX2 node) based on a small ligand (26 atoms)
-* `bm2` is a long benchmark (~25 s/iteration on a 64-core ThunderX2 node) based on a big ligand (2672 atoms)
+* `bm2` is a long benchmark (~25 s/iteration on a 64-core ThunderX2 node) based on a big ligand (2672 atoms)* `bm2` is a long benchmark (~25 s/iteration on a 64-core ThunderX2 node) based on a big ligand (2672 atoms)
+* `bm2_long` is a very long benchmark based on `bm2` but with 1048576 poses instead of 65536
 
 They are located in the [`data`](data/) directory, and `bm1` is run by default.
 All implementations accept a `--deck` parameter to specify an input deck directory.
