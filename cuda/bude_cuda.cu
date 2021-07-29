@@ -84,8 +84,6 @@ void runCUDA(float* results)
   cudaDeviceSynchronize();
 
   double start = getTimestamp();
-  printf("<<%d,%d>> -> %d\n",global, local,params.nposes);
-
 
   for(int ii = 0; ii < params.iterations; ++ii)
   {
@@ -135,12 +133,10 @@ __device__ void compute_transformation_matrix(const float transform_0,
   transform[0].y = sx*sy*cz - cx*sz;
   transform[0].z = cx*sy*cz + sx*sz;
   transform[0].w = transform_3;
-  
   transform[1].x = cy*sz;
   transform[1].y = sx*sy*sz + cx*cz;
   transform[1].z = cx*sy*sz - sx*cz;
   transform[1].w = transform_4;
-
   transform[2].x = -sy;
   transform[2].y = sx*cy;
   transform[2].z = cx*cy;
@@ -195,17 +191,11 @@ __global__ void fasten_main(const int natlig,
         transforms_5[index],
         transform[i]);
     etot[i] = ZERO;
-    // etotals[ix] = transform[i][0].x;
   }
 
 #ifdef USE_SHARED
   __syncthreads();
 #endif
-
-    // etotals[ix] =  ix ;//  transform[3][1].y; // (transforms_0[ix + 1 * lsz]) ;// transform[0][0].x ;// transform[0][0].x;
-    // etot[1] = transforms_1[0] ;// transform[0][0].y;
-    // etot[2] = transforms_2[0] ;// transform[0][0].z;
-    // etot[3] = transforms_3[0] ;// transform[0][0].w;
 
   // Loop over ligand atoms
   int il = 0;
@@ -230,7 +220,6 @@ __global__ void fasten_main(const int natlig,
       lpos[i].z = transform[i][2].w + linitpos.x*transform[i][2].x + 
         linitpos.y*transform[i][2].y + linitpos.z*transform[i][2].z;
     }
-
 
     // Loop over protein atoms
     int ip = 0;
@@ -301,7 +290,6 @@ __global__ void fasten_main(const int natlig,
       etotals[td_base+i*blockDim.x] = etot[i]*HALF;
     }
   }
-  // etotals[ix] = transform[0][0].x;
 } //end of fasten_main
 
 

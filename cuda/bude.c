@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
       // printf ("Maxdiff: %.2f (%.3f vs %.3f)\n", maxdiff, resultsRef[i], resultsCUDA[i]);
     }
 
-    if (i < 1024)
+    if (i < 8)
       printf("%7.2f    vs   %7.2f  (%5.2f%%)\n", resultsRef[i], resultsCUDA[i], 100*diff);
   }
   printf("\nLargest difference was %.3f%%\n\n", maxdiff*100);
