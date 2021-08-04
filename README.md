@@ -8,7 +8,7 @@ Increasing the iteration count has similar performance effects to docking multip
 
 The top-level `data` directory contains the input common to implementations.
 The top-level `makedeck` directory contains an input deck generation program and a set of mol2/bhff input files.
-Each other subdirectory contains a separate implementation:
+Each other subdirectory contains a separate C/C++ implementation:
 
 - [OpenMP](openmp/) for CPUs
 - [OpenMP target](openmp-target/) for GPUs
@@ -17,6 +17,11 @@ Each other subdirectory contains a separate implementation:
 - [OpenACC](openacc/) for GPUs
 - [SYCL](sycl/) for CPUs and GPUs
 - [Kokkos](kokkos/) for CPUs and GPUs
+
+We also include implementations in emerging programming languages as direct ports of miniBUDE:
+
+- [Julia](miniBUDE.jl) for CPUs (@threads) and GPUs ([CUDA.jl](https://juliagpu.gitlab.io/CUDA.jl/), [AMDGPU.jl](https://amdgpu.juliagpu.org/stable/), [oneAPI.jl](https://github.com/JuliaGPU/oneAPI.jl), etc)
+
 
 ## Building
 
@@ -30,7 +35,6 @@ Refer to each implementation's README for further build instructions.
 To run with the default options, run the binary without any flags.
 To adjust the run time, use `-i` to set the number of iterations.
 For very short runs, e.g. for simulation, use `-n 1024` to reduce the number of poses.
-The maximum number of poses supported is `65536`.
 
 Refer to each implementation's README for further run instructions.
 
