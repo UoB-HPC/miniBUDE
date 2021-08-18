@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
 project(bude_kokkos)
-set(CMAKE_VERBOSE_MAKEFILE OFF)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -19,6 +18,15 @@ if (KOKKOS_IN_TREE)
     else()
         message(STATUS "Not forwarding CXX_EXTRA_FLAGS to Kokkos by default, set FORWARD_CXX_EXTRA_FLAGS_TO_KOKKOS=ON to override")
     endif()
+
+    if(KOKKOS_CXX_EXTRA_FLAGS)
+        message(STATUS "Setting KOKKOS_CXX_EXTRA_FLAGS for Kokkos...")
+        set(OLD_CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")               # save it for now
+        set(CMAKE_CXX_FLAGS ${KOKKOS_CXX_EXTRA_FLAGS})
+        set(OLD_CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}") # save it for now
+        set(CMAKE_EXE_LINKER_FLAGS ${KOKKOS_CXX_EXTRA_FLAGS})
+    endif()
+
     add_subdirectory(${KOKKOS_IN_TREE} ${CMAKE_BINARY_DIR}/kokkos)
     add_definitions(-DKOKKOS_IN_TREE=${KOKKOS_IN_TREE})
 else ()
@@ -71,6 +79,10 @@ target_compile_options(bude PUBLIC "$<$<CONFIG:Debug>:${DEBUG_OPTIONS}>")
 
 if(DEFINED OLD_CMAKE_CXX_FLAGS) # restore if overwritten before, as required by Kokkos to pick up CXX_EXTRA_FLAGS as CMAKE_CXX_FLAGS
     set(CMAKE_CXX_FLAGS ${OLD_CMAKE_CXX_FLAGS})
+endif()
+
+if(DEFINED OLD_CMAKE_EXE_LINKER_FLAGS)
+    set(CMAKE_EXE_LINKER_FLAGS ${OLD_CMAKE_EXE_LINKER_FLAGS})
 endif()
 
 target_link_libraries(bude Kokkos::kokkos)
