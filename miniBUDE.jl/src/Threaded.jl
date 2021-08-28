@@ -39,7 +39,7 @@ function run(params::Params, deck::Deck, _::DeviceWithRepr)
     )
   end
 
-
+  
   (etotals, elapsed, params.wgsize)
 end
 
@@ -58,8 +58,8 @@ end
 
   Threads.@threads for group = 1:numGroups
 
-    etot = MArray{Tuple{WGSIZE},Float32}(undef)
-    transform = MArray{Tuple{3,4,WGSIZE},Float32}(undef)
+    etot = MArray{Tuple{WGSIZE}, Float32}(undef)
+    transform = MArray{Tuple{WGSIZE, 3, 4},Float32}(undef)
 
     @simd for i = 1:WGSIZE
       ix = (group - 1) * (WGSIZE) + i
@@ -69,18 +69,18 @@ end
       @inbounds cy::Float32 = cos(poses[2, ix])
       @inbounds sz::Float32 = sin(poses[3, ix])
       @inbounds cz::Float32 = cos(poses[3, ix])
-      @inbounds transform[1, 1, i] = cy * cz
-      @inbounds transform[1, 2, i] = sx * sy * cz - cx * sz
-      @inbounds transform[1, 3, i] = cx * sy * cz + sx * sz
-      @inbounds transform[1, 4, i] = poses[4, ix]
-      @inbounds transform[2, 1, i] = cy * sz
-      @inbounds transform[2, 2, i] = sx * sy * sz + cx * cz
-      @inbounds transform[2, 3, i] = cx * sy * sz - sx * cz
-      @inbounds transform[2, 4, i] = poses[5, ix]
-      @inbounds transform[3, 1, i] = -sy
-      @inbounds transform[3, 2, i] = sx * cy
-      @inbounds transform[3, 3, i] = cx * cy
-      @inbounds transform[3, 4, i] = poses[6, ix]
+      @inbounds transform[i, 1, 1] = cy * cz
+      @inbounds transform[i, 1, 2] = sx * sy * cz - cx * sz
+      @inbounds transform[i, 1, 3] = cx * sy * cz + sx * sz
+      @inbounds transform[i, 1, 4] = poses[4, ix]
+      @inbounds transform[i, 2, 1] = cy * sz
+      @inbounds transform[i, 2, 2] = sx * sy * sz + cx * cz
+      @inbounds transform[i, 2, 3] = cx * sy * sz - sx * cz
+      @inbounds transform[i, 2, 4] = poses[5, ix]
+      @inbounds transform[i, 3, 1] = -sy
+      @inbounds transform[i, 3, 2] = sx * cy
+      @inbounds transform[i, 3, 3] = cx * cy
+      @inbounds transform[i, 3, 4] = poses[6, ix]
       @inbounds etot[i] = Zero
     end
 
@@ -91,29 +91,26 @@ end
       lhphb_ltz::Bool = l_params.hphb < Zero
       lhphb_gtz::Bool = l_params.hphb > Zero
 
-
-      lpos_x = MArray{Tuple{WGSIZE},Float32}(undef)
-      lpos_y = MArray{Tuple{WGSIZE},Float32}(undef)
-      lpos_z = MArray{Tuple{WGSIZE},Float32}(undef)
+      lpos = MArray{Tuple{WGSIZE, 3}, Float32}(undef)
 
       @simd for i = 1:WGSIZE
-        @inbounds lpos_x[i] = (
-          transform[1, 4, i] +
-          l_atom.x * transform[1, 1, i] +
-          l_atom.y * transform[1, 2, i] +
-          l_atom.z * transform[1, 3, i]
+        @inbounds lpos[i, 1] = (
+          transform[i, 1, 4] +
+          l_atom.x * transform[i, 1, 1] +
+          l_atom.y * transform[i, 1, 2] +
+          l_atom.z * transform[i, 1, 3]
         )
-        @inbounds lpos_y[i] = (
-          transform[2, 4, i] +
-          l_atom.x * transform[2, 1, i] +
-          l_atom.y * transform[2, 2, i] +
-          l_atom.z * transform[2, 3, i]
+        @inbounds lpos[i, 2] = (
+          transform[i, 2, 4] +
+          l_atom.x * transform[i, 2, 1] +
+          l_atom.y * transform[i, 2, 2] +
+          l_atom.z * transform[i, 2, 3]
         )
-        @inbounds lpos_z[i] = (
-          transform[3, 4, i] +
-          l_atom.x * transform[3, 1, i] +
-          l_atom.y * transform[3, 2, i] +
-          l_atom.z * transform[3, 3, i]
+        @inbounds lpos[i, 3] = (
+          transform[i, 3, 4] +
+          l_atom.x * transform[i, 3, 1] +
+          l_atom.y * transform[i, 3, 2] +
+          l_atom.z * transform[i, 3, 3]
         )
       end
 
@@ -142,11 +139,11 @@ end
         dslv_init::Float32 = p_hphb + l_hphb
 
         @simd for i = 1:WGSIZE
-          @inbounds x::Float32 = lpos_x[i] - p_atom.x
-          @inbounds y::Float32 = lpos_y[i] - p_atom.y
-          @inbounds z::Float32 = lpos_z[i] - p_atom.z
+          @inbounds x::Float32 = lpos[i, 1] - p_atom.x
+          @inbounds y::Float32 = lpos[i, 2] - p_atom.y
+          @inbounds z::Float32 = lpos[i, 3] - p_atom.z
 
-          distij::Float32 = sqrt(x * x + y * y + z * z)
+          distij::Float32 = sqrt(x ^ 2 + y ^ 2+ z ^ 2)
 
           # Calculate the sum of the sphere radii
           distbb::Float32 = distij - radij

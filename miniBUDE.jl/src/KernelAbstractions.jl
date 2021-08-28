@@ -212,7 +212,7 @@ end
         @inbounds y::Float32 = lpos[i].y - p_atom.y
         @inbounds z::Float32 = lpos[i].z - p_atom.z
 
-        distij::Float32 = sqrt(x * x + y * y + z * z)
+        distij::Float32 = sqrt(x ^ 2 + y ^ 2 + z ^ 2)
 
         # Calculate the sum of the sphere radii
         distbb::Float32 = distij - radij

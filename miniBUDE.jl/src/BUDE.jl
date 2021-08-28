@@ -207,7 +207,13 @@ function main()
   println("WGsize    : ", params.wgsize)
   println("PPWI      : ", params.ppwi)
 
+  set_zero_subnormals(true)
+  GC.enable(false)
+
   (energies, rumtimeSeconds, ppwi) = run(params, deck, ds[deviceIndex])
+
+  GC.enable(true)
+  set_zero_subnormals(false)
 
   print_timings(params, deck, rumtimeSeconds, ppwi)
 
