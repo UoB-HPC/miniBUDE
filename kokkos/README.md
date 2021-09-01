@@ -19,6 +19,7 @@ Flags:
   * `FORWARD_CXX_EXTRA_FLAGS_TO_KOKKOS` : `ON|OFF`, whether to forward `CXX_EXTRA_FLAGS` when building Kokkos. This is `OFF` by default as Kokkos has a set of tested flags for each compiler. 
 * `Kokkos_ROOT`: `STRING`, path to the local Kokkos installation, this is optional and mutually exclusive with `KOKKOS_IN_TREE`.  
 * `DEFAULT_WGSIZE`: `INGEGER`, sets the [block size](#block-size). Defaults to 64.
+* `CUSTOM_SYSTEM_INCLUDE_FLAG`, sets the prefix flag for including system libraries. For example, setting this flag to `-I` replaces all `-isystem <headers...>` with `-I <headers...>`. 
 
 Compilers can be specified via the usual CMake options, for example:
 

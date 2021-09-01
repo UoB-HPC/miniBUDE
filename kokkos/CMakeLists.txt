@@ -2,6 +2,13 @@ cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
 project(bude_kokkos)
 
+# XXX CMAKE_INCLUDE_SYSTEM_FLAG_* must be set after entry into this script as the flag gets overwritten at CMake initialisaiton.
+# so we can't just pass -DCMAKE_INCLUDE_SYSTEM_FLAG_CXX=...
+if(CUSTOM_SYSTEM_INCLUDE_FLAG)
+    set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "${CUSTOM_SYSTEM_INCLUDE_FLAG}")
+    set(CMAKE_INCLUDE_SYSTEM_FLAG_C   "${CUSTOM_SYSTEM_INCLUDE_FLAG}")
+endif()
+
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
