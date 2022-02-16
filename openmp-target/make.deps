@@ -1,2 +1,0 @@
-bude.o:         bude.c shared.h
-shared.o:       shared.h shared.c

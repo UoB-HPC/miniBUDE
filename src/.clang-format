@@ -1,0 +1,7 @@
+﻿---
+AllowShortIfStatementsOnASingleLine: Always
+ColumnLimit: 120
+CompactNamespaces: true
+FixNamespaceComments: true
+IndentPPDirectives: BeforeHash
+...

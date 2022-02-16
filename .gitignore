@@ -13,3 +13,9 @@ energies.dat
 *.old
 
 .vscode
+
+build/
+cmake-build-*/
+.idea/
+.directory
+log.txt
