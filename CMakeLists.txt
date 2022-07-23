@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 project(miniBUDE VERSION 2.0 LANGUAGES CXX)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 # some nicer defaults for standard C++
@@ -11,103 +10,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
-#set(USE_CPU_FEATURES ON)
-#set(MODEL acc)
-
-
-if (NOT MODEL)
-#    set(MODEL raja)
-#    set(RAJA_IN_TREE /home/tom/Downloads/RAJA-v0.14.1/)
-#    set(ENABLE_CUDA ON)
-#    set(CUDA_ARCH sm_61)
-#    set(CUDA_TOOLKIT_ROOT_DIR /opt/nvidia/hpc_sdk/Linux_x86_64/21.9/cuda/11.4)
-
-
-
-#    set(MODEL cuda)
-#    set(CUDA_ARCH sm_61)
-#    set(CMAKE_CUDA_COMPILER /opt/nvidia/hpc_sdk/Linux_x86_64/21.9/cuda/11.4/bin/nvcc)
-
-
-
-#set(MODEL kokkos)
-#set(KOKKOS_IN_TREE /home/tom/Downloads/kokkos-3.5.00)
-#set(Kokkos_ENABLE_OPENMP ON CACHE BOOL "")
-#set(Kokkos_ENABLE_CUDA ON CACHE BOOL "")
-#set(Kokkos_ARCH_PASCAL61 ON CACHE BOOL "")
-#set(Kokkos_ENABLE_CUDA_LAMBDA ON CACHE BOOL "")
-
-set(MODEL thrust)
-set(THRUST_IMPL CUDA)
-set(SDK_DIR /opt/nvidia/hpc_sdk/Linux_x86_64/21.9/cuda/include)
-set(CMAKE_CUDA_COMPILER /opt/nvidia/hpc_sdk/Linux_x86_64/21.9/cuda/11.4/bin/nvcc)
-set(CUDA_ARCH sm_61)
-
-
+## Flags for debugging only, enable for development (ASan only works on few models)
+set(SANITIZE OFF)
+if (SANITIZE)
+    set(DEBUG_FLAGS ${DEBUG_FLAGS} -fsanitize=address)
+    set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address)
 endif ()
-
-
-#set(MODEL tbb)
-#set(OFFLOAD NVIDIA:sm_35)
-
-
-#set(MODEL sycl)
-#set(SYCL_COMPILER HIPSYCL)
-#set(SYCL_COMPILER_DIR /opt/hipsycl/68fb6d2026b07b0895ff468b58d40858ac1ae7d5)
-
-
-#set(MODEL sycl)
-#set(SYCL_COMPILER ONEAPI-DPCPP)
-
-
-
-#set(CMAKE_CXX_COMPILER "${KOKKOS_IN_TREE}/bin/nvcc_wrapper")
-
-#set(ENV{CUDA_ROOT} /opt/nvidia/hpc_sdk/Linux_x86_64/21.9/cuda/11.4/)
-#set(CUDA_ROOT /opt/nvidia/hpc_sdk/Linux_x86_64/21.9/cuda/11.4/)
-
-#set(CMAKE_CUDA_COMPILER /opt/nvidia/hpc_sdk/Linux_x86_64/21.9/compilers/bin/nvcc)
-#set(CUDA_ROOT /opt/nvidia/hpc_sdk/Linux_x86_64/21.9/cuda/11.4/)
-#set(CUDAToolkit_ROOT /opt/nvidia/hpc_sdk/Linux_x86_64/21.9/cuda/11.4/)
-
-
-
-#
-#set(MODEL std20)
-#set(CXX_EXTRA_LIBRARIES tbb)
-
-#set(MODEL std)
-#set(CMAKE_CXX_COMPILER /opt/nvidia/hpc_sdk/Linux_x86_64/21.5/compilers/bin/nvc++)
-
-
-#set(MODEL cuda)
-#set(CMAKE_CUDA_COMPILER /opt/nvidia/hpc_sdk/Linux_x86_64/21.9/compilers/bin/nvcc)
-#set(CUDA_EXTRA_FLAGS "-gencode arch=compute_61,code=sm_61")
-#set(CUDA_ARCH sm_61)
-
-
-#set(MODEL ocl)
-#set(OpenCL_LIBRARY /opt/rocm-4.3.0/opencl/lib/libOpenCL.so.1.2)
-
-#set(MODEL hip)
-#set(CMAKE_CXX_COMPILER /opt/rocm-4.3.0/bin/hipcc)
-#set(CXX_EXTRA_FLAGS  -nogpuinc -nogpulib)
-#set(CUDA_EXTRA_FLAGS "-gencode arch=compute_35,code=sm_35")
-#set(CUDA_ARCH sm_35)
-
-
-#set(SYCL_COMPILER_DIR /opt/hipsycl/68fb6d2026b07b0895ff468b58d40858ac1ae7d5)
-
-#set(MODEL std)
-##set(CXX_EXTRA_LIBRARIES tbb)
-#set(CMAKE_CXX_COMPILER /opt/nvidia/hpc_sdk/Linux_x86_64/21.9/compilers/bin/nvc++)
-#set(NVHPC_OFFLOAD cc61)
-
-
-#set(SYCL_COMPILER COMPUTECPP)
-#set(SYCL_COMPILER_DIR /home/tom/Downloads/ComputeCpp-CE-2.6.0-x86_64-linux-gnu/)
-#set(OpenCL_LIBRARY /opt/intel/oneapi/compiler/2021.4.0/linux/lib/libOpenCL.so.1.2)
-
 
 # the final executable name
 set(EXE_NAME bude)
@@ -157,7 +65,7 @@ if ((DEFINED CXX_EXTRA_FLAGS) AND (NOT DEFINED CXX_EXTRA_LINK_FLAGS))
     set(CXX_EXTRA_LINK_FLAGS ${CXX_EXTRA_FLAGS})
 endif ()
 
-option(USE_CPU_FEATURES "Enable the cpu_feature library for host CPU detection" ON)
+option(USE_CPU_FEATURES "Enable the cpu_feature library for host CPU detection" OFF)
 
 if (USE_CPU_FEATURES)
     include(FetchContent)
@@ -177,8 +85,8 @@ include(cmake/register_models.cmake)
 # register out models <model_name> <preprocessor_def_name> <source files...>
 register_model(omp OMP fasten.hpp)
 register_model(ocl OCL fasten.hpp)
-register_model(std STD fasten.hpp)
-register_model(std20 STD20 fasten.hpp) # TODO
+register_model(std-indices STD_INDICES fasten.hpp)
+register_model(std-ranges STD_RANGES fasten.hpp) # TODO
 register_model(hip HIP fasten.hpp)
 register_model(cuda CUDA fasten.hpp)
 register_model(kokkos KOKKOS fasten.hpp)
@@ -188,7 +96,6 @@ register_model(acc ACC fasten.hpp)
 register_model(raja USE_RAJA fasten.hpp)
 register_model(tbb TBB fasten.hpp)
 register_model(thrust THRUST fasten.hpp) # TODO
-
 
 
 set(USAGE ON CACHE BOOL "Whether to print all custom flags for the selected model")
@@ -226,12 +133,6 @@ endif ()
 
 message(STATUS "Default ${CMAKE_BUILD_TYPE} flags are `${DEFAULT_${BUILD_TYPE}_FLAGS}`, set ${BUILD_TYPE}_FLAGS to override (CXX_EXTRA_* flags are not affected)")
 
-set(SANATIZE OFF)
-
-if (SANATIZE)
-    set(DEBUG_FLAGS ${DEBUG_FLAGS} -fsanitize=address)
-    set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address)
-endif ()
 
 # setup common build flag defaults if there are no overrides
 if (NOT DEFINED ${BUILD_TYPE}_FLAGS)
@@ -243,9 +144,9 @@ endif ()
 set(DEFAULT_PPWI "1,2,4,8,16,32,64,128")
 
 if (NOT PPWI)
-    message(STATUS PPWI not set, defaulting to ${DEFAULT_PPWI})
+    message(STATUS "PPWI not set, defaulting to ${DEFAULT_PPWI}")
     set(PPWI ${DEFAULT_PPWI})
-endif()
+endif ()
 
 
 message(STATUS "CXX vendor  : ${CMAKE_CXX_COMPILER_ID} (${CMAKE_CXX_COMPILER})")
@@ -285,9 +186,10 @@ target_link_options(${EXE_NAME} PUBLIC ${LINK_FLAGS} ${CXX_EXTRA_LINK_FLAGS})
 # setup git_watcher...
 set(PRE_CONFIGURE_FILE "${CMAKE_SOURCE_DIR}/src/meta_vcs.h.in")
 set(POST_CONFIGURE_FILE "${CMAKE_BINARY_DIR}/generated/meta_vcs.h")
-#include("${CMAKE_SOURCE_DIR}/cmake/git_watcher.cmake")
-#set(GIT_FAIL_IF_NONZERO_EXIT FALSE)
-#add_dependencies(${EXE_NAME} check_git)
+
+set(GIT_FAIL_IF_NONZERO_EXIT FALSE) # Dont' fail the build because of VCS; use FALSE here because git_watcher says so
+include("${CMAKE_SOURCE_DIR}/cmake/git_watcher.cmake")
+add_dependencies(${EXE_NAME} check_git)
 
 
 # some models require the target to be already specified so they can finish their setup here
@@ -312,6 +214,6 @@ else ()
     set(COMPILE_COMMANDS COMPILE_FLAGS)
 endif ()
 
-#set_target_properties(${EXE_NAME} PROPERTIES OUTPUT_NAME "${BIN_NAME}")
+set_target_properties(${EXE_NAME} PROPERTIES OUTPUT_NAME "${BIN_NAME}")
 
 install(TARGETS ${EXE_NAME} DESTINATION bin)

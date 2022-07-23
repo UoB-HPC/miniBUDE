@@ -163,10 +163,11 @@ public:
       throw std::runtime_error("Unable to set omp default device, need " + std::to_string(device) + ", got " +
                                std::to_string(actual));
     }
-//    if (wgsize != 1 && wgsize != 0) {
-//      throw std::invalid_argument("Only wgsize = {1|0} (i.e no workgroup) are supported for OpenMP, got " +
-//                                  std::to_string((wgsize)));
-//    }
+#else
+    if (wgsize != 1 && wgsize != 0) {
+      throw std::invalid_argument("Only wgsize = {1|0} (i.e no workgroup) are supported for OpenMP, got " +
+                                  std::to_string((wgsize)));
+    }
 #endif
 
     Sample sample(PPWI, wgsize, p.nposes());

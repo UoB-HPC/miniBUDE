@@ -19,3 +19,5 @@ cmake-build-*/
 .idea/
 .directory
 log.txt
+
+heatmap.csv

@@ -8,35 +8,84 @@ Increasing the iteration count has similar performance effects to docking multip
 
 The top-level `data` directory contains the input common to implementations.
 The top-level `makedeck` directory contains an input deck generation program and a set of mol2/bhff input files.
-Each other subdirectory contains a separate C/C++ implementation:
-
-- [OpenMP](openmp/) for CPUs
-- [OpenMP target](openmp-target/) for GPUs
-- [CUDA](cuda/) for GPUs
-- [OpenCL](opencl/) for GPUs
-- [OpenACC](openacc/) for GPUs
-- [SYCL](sycl/) for CPUs and GPUs
-- [Kokkos](kokkos/) for CPUs and GPUs
-
-We also include implementations in emerging programming languages as direct ports of miniBUDE:
-
-- [Julia](miniBUDE.jl) for CPUs (@threads) and GPUs ([CUDA.jl](https://juliagpu.gitlab.io/CUDA.jl/), [AMDGPU.jl](https://amdgpu.juliagpu.org/stable/), [oneAPI.jl](https://github.com/JuliaGPU/oneAPI.jl), etc)
-
+Each other subdirectory in `src` contains a separate C/C++ implementation.
 
 ## Building
 
-To build with the default options, type `make` in an implementation directory.
-There are options to choose the compiler used and the architecture targeted.
+Drivers, compiler and software applicable to whichever implementation you would like to build against is required.
 
-Refer to each implementation's README for further build instructions.
+### CMake
 
-## Running
+The project supports building with CMake >= 3.14.0, which can be installed without root via the [official script](https://cmake.org/download/).
 
-To run with the default options, run the binary without any flags.
-To adjust the run time, use `-i` to set the number of iterations.
-For very short runs, e.g. for simulation, use `-n 1024` to reduce the number of poses.
+Each miniBUDE implementation (programming model) is built as follows:
 
-Refer to each implementation's README for further run instructions.
+```shell
+$ cd miniBUDE
+
+# configure the build, build type defaults to Release
+# The -DMODEL flag is required
+$ cmake -Bbuild -H. -DMODEL=<model> <model specific flags prefixed with -D...>
+
+# compile
+$ cmake --build build
+
+# run executables in ./build
+$ ./build/<model>-bude
+```
+
+The `MODEL` option selects one implementation of miniBUDE to build.
+The source for each model's implementations are located in `./src/<model>`.
+
+Currently available models are:
+```
+omp;ocl;std-indices;std-ranges;hip;cuda;kokkos;sycl;acc;raja;tbb;thrust
+```
+
+#### Overriding default flags
+By default, we have defined a set of optimal flags for known HPC compilers.
+There are assigned those to `RELEASE_FLAGS`, and you can override them if required.
+
+To find out what flag each model supports or requires, simply configure while only specifying the model.
+For example:
+```shell
+> cd miniBUDE
+> cmake -Bbuild -H. -DMODEL=omp 
+No CMAKE_BUILD_TYPE specified, defaulting to 'Release'
+-- CXX_EXTRA_FLAGS: 
+        Appends to common compile flags. These will be appended at link phase as well.
+        To use separate flags at link phase, set `CXX_EXTRA_LINK_FLAGS`
+-- CXX_EXTRA_LINK_FLAGS: 
+        Appends to link flags which appear *before* the objects.
+        Do not use this for linking libraries, as the link line is order-dependent
+-- CXX_EXTRA_LIBRARIES: 
+        Append to link flags which appear *after* the objects.
+        Use this for linking extra libraries (e.g `-lmylib`, or simply `mylib`)
+-- CXX_EXTRA_LINKER_FLAGS: 
+        Append to linker flags (i.e GCC's `-Wl` or equivalent)
+-- Available models:  omp;ocl;std-indices;std-ranges;hip;cuda;kokkos;sycl;acc;raja;tbb;thrust
+-- Selected model  :  omp
+-- Supported flags:
+
+   CMAKE_CXX_COMPILER (optional, default=c++): Any CXX compiler that supports OpenMP as per CMake detection (and offloading if enabled with `OFFLOAD`)
+   ARCH (optional, default=): This overrides CMake's CMAKE_SYSTEM_PROCESSOR detection which uses (uname -p), this is mainly for use with
+         specialised accelerators only and not to be confused with offload which is is mutually exclusive with this.
+         Supported values are:
+          - NEC
+   OFFLOAD (optional, default=OFF): Whether to use OpenMP offload, the format is <VENDOR:ARCH?>|ON|OFF.
+        We support a small set of known offload flags for clang, gcc, and icpx.
+        However, as offload support is rapidly evolving, we recommend you directly supply them via OFFLOAD_FLAGS.
+        For example:
+          * OFFLOAD=NVIDIA:sm_60
+          * OFFLOAD=AMD:gfx906
+          * OFFLOAD=INTEL
+          * OFFLOAD=ON OFFLOAD_FLAGS=...
+   OFFLOAD_FLAGS (optional, default=): If OFFLOAD is enabled, this *overrides* the default offload flags
+   OFFLOAD_APPEND_LINK_FLAG (optional, default=ON): If enabled, this appends all resolved offload flags (OFFLOAD=<vendor:arch> or directly from OFFLOAD_FLAGS) to the link flags.
+        This is required for most offload implementations so that offload libraries can linked correctly.
+
+
+```
 
 ### Benchmarks
 

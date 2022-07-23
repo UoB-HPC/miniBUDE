@@ -10,7 +10,7 @@
 #ifdef IMPL_CLS
   #error IMPL_CLS was already defined
 #endif
-#define IMPL_CLS StdBude
+#define IMPL_CLS StdIndicesBude
 
 template <typename Z = size_t> class ranged {
   Z from, to;
@@ -108,12 +108,9 @@ template <size_t PPWI> class IMPL_CLS final : public Bude<PPWI> {
         std::array<Vec3<float>, PPWI> lpos = {};
 #pragma omp simd
         for (int l = 0; l < PPWI; l++) {
-          lpos[l].x = transform[l][0].w + l_atom.x * transform[l][0].x + l_atom.y * transform[l][0].y +
-                      l_atom.z * transform[l][0].z;
-          lpos[l].y = transform[l][1].w + l_atom.x * transform[l][1].x + l_atom.y * transform[l][1].y +
-                      l_atom.z * transform[l][1].z;
-          lpos[l].z = transform[l][2].w + l_atom.x * transform[l][2].x + l_atom.y * transform[l][2].y +
-                      l_atom.z * transform[l][2].z;
+          lpos[l].x = transform[l][0].w + l_atom.x * transform[l][0].x + l_atom.y * transform[l][0].y + l_atom.z * transform[l][0].z;
+          lpos[l].y = transform[l][1].w + l_atom.x * transform[l][1].x + l_atom.y * transform[l][1].y + l_atom.z * transform[l][1].z;
+          lpos[l].z = transform[l][2].w + l_atom.x * transform[l][2].x + l_atom.y * transform[l][2].y + l_atom.z * transform[l][2].z;
         }
 
         // Loop over protein atoms

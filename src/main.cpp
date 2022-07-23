@@ -12,12 +12,11 @@
 
 #include "bude.h"
 #if __has_include("meta_build.h")
-#include "meta_build.h"
+  #include "meta_build.h"
 #endif
 #if __has_include("meta_vcs.h")
-#include "meta_vcs.h"
+  #include "meta_vcs.h"
 #endif
-
 
 #define MINIBUDE_WARN_NOT_CMAKE "unknown (built with deprecated GNU Make, please migrate to CMake)"
 
@@ -45,19 +44,19 @@
   #endif
 #endif
 
-#define DEFAULT_PPWI 1,2,4,8,16,32,64,128
+#define DEFAULT_PPWI 1, 2, 4, 8, 16, 32, 64, 128
 
 #ifndef USE_PPWI
-//#warning no ppwi list defined, defaulting to DEFAULT_PPWI
-#define USE_PPWI DEFAULT_PPWI
+  // #warning no ppwi list defined, defaulting to DEFAULT_PPWI
+  #define USE_PPWI DEFAULT_PPWI
 #endif
 
 #if defined(CUDA)
   #include "cuda/fasten.hpp"
-#elif defined(STD)
-  #include "std/fasten.hpp"
-#elif defined(STD20)
-  #include "std20/fasten.hpp"
+#elif defined(STD_INDICES)
+  #include "std-indices/fasten.hpp"
+#elif defined(STD_RANGES)
+  #include "std-ranges/fasten.hpp"
 #elif defined(TBB)
   #include "tbb/fasten.hpp"
 #elif defined(HIP)
@@ -279,6 +278,11 @@ parseParams(const std::vector<std::string> &args) {
 
   if (ppwis.empty()) ppwis = {PPWIs[0]};
   if (wgsizes.empty()) wgsizes = {1};
+
+  if (params.list) {
+    // Don't read any decks if we're just listing devices
+    return {params, wgsizes, ppwis};
+  }
 
   params.ligand = readNStruct<Atom>(params.deckDir + FILE_LIGAND);
   params.protein = readNStruct<Atom>(params.deckDir + FILE_PROTEIN);
@@ -543,6 +547,10 @@ bool run(const Params &p, const std::vector<size_t> &wgsizes, const std::vector<
                                   [](const Result &l, const Result &r) { return l.ms.sum < r.ms.sum; });
 
       std::cout << (p.csv ? "# " : "") << "best: { "
+                << "min_ms: " << min->ms.min << ", "
+                << "max_ms: " << min->ms.max << ", "
+                << "sum_ms: " << min->ms.sum << ", "
+                << "avg_ms: " << min->ms.mean << ", "
                 << "ppwi: " << min->sample.ppwi << ", "
                 << "wgsize: " << min->sample.wgsize << " }\n";
 

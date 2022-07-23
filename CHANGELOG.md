@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [v2.0] - 2022-02-??
+## [v2.0] - 2022-??-??
 
 ### Added
 - CI via GitHub Actions

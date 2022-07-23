@@ -12,7 +12,7 @@
 #ifdef IMPL_CLS
   #error IMPL_CLS was already defined
 #endif
-#define IMPL_CLS Std20Bude
+#define IMPL_CLS StdRangesBude
 
 template <size_t PPWI> class IMPL_CLS final : public Bude<PPWI> {
 
