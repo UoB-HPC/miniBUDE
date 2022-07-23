@@ -174,39 +174,45 @@ public:
 
     auto contextStart = now();
 
+    const auto ntypes = p.ntypes();
+    const auto nposes = p.nposes();
+    const auto natlig = p.natlig();
+    const auto natpro = p.natpro();
+
     std::array<float *, 6> poses{};
-    auto protein = static_cast<Atom *>(std::malloc(sizeof(Atom) * p.natpro()));
-    auto ligand = static_cast<Atom *>(std::malloc(sizeof(Atom) * p.natlig()));
-    auto forcefield = static_cast<FFParams *>(std::malloc(sizeof(FFParams) * p.ntypes()));
-    auto energies = static_cast<float *>(std::malloc(sizeof(float) * p.nposes()));
+    auto protein = static_cast<Atom *>(std::malloc(sizeof(Atom) * natpro));
+    auto ligand = static_cast<Atom *>(std::malloc(sizeof(Atom) * natlig));
+    auto forcefield = static_cast<FFParams *>(std::malloc(sizeof(FFParams) * ntypes));
+    auto energies = static_cast<float *>(std::malloc(sizeof(float) * nposes));
 
-    for (size_t i = 0; i < 6; i++) {
-      poses[i] = static_cast<float *>(std::malloc(sizeof(float) * p.nposes()));
-#pragma omp parallel for
-      for (int j = 0; j < p.nposes(); j++)
-        poses[i][j] = p.poses[i][j];
+    for (auto i = 0; i < 6; i++)
+      poses[i] = static_cast<float *>(std::malloc(sizeof(float) * nposes));
+
+#pragma omp parallel
+    {
+      for (auto i = 0; i < 6; i++) {
+#pragma omp for nowait
+        for (auto j = 0; j < nposes; j++)
+          poses[i][j] = p.poses[i][j];
+      }
+#pragma omp for nowait
+      for (auto i = 0; i < nposes; i++)
+        energies[i] = 0.f;
+
+#pragma omp for nowait
+      for (auto i = 0; i < natpro; i++)
+        protein[i] = p.protein[i];
+
+#pragma omp for nowait
+      for (auto i = 0; i < natlig; i++)
+        ligand[i] = p.ligand[i];
+
+#pragma omp for nowait
+      for (auto i = 0; i < ntypes; i++)
+        forcefield[i] = p.forcefield[i];
     }
-
-#pragma omp parallel for
-    for (int i = 0; i < p.nposes(); i++)
-      energies[i] = 0.f;
-
-#pragma omp parallel for
-    for (int i = 0; i < p.natpro(); i++)
-      protein[i] = p.protein[i];
-
-#pragma omp parallel for
-    for (int i = 0; i < p.natlig(); i++)
-      ligand[i] = p.ligand[i];
-
-#pragma omp parallel for
-    for (int i = 0; i < p.ntypes(); i++)
-      forcefield[i] = p.forcefield[i];
-
     auto contextEnd = now();
     sample.contextTime = {contextStart, contextEnd};
-
-#define TARGET
 
     auto poses_0 = poses[0];
     auto poses_1 = poses[1];
@@ -214,11 +220,6 @@ public:
     auto poses_3 = poses[3];
     auto poses_4 = poses[4];
     auto poses_5 = poses[5];
-
-    const auto ntypes = p.ntypes();
-    const auto nposes = p.nposes();
-    const auto natlig = p.natlig();
-    const auto natpro = p.natpro();
 
 #ifdef OMP_TARGET // clang-format off
   #pragma omp target data                                      \
