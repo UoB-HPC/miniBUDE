@@ -41,7 +41,7 @@ public:
     bool operator==(iterator other) const { return num == other.num; }
     bool operator!=(iterator other) const { return *this != other; }
     bool operator<(iterator other) const { return num < other.num; }
-    reference operator*() const { return num; }
+    reference operator*() { return num; }
     difference_type operator-(const iterator &it) const { return num - it.num; }
 
     value_type operator[](const difference_type &i) const { return num + i; }
