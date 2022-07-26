@@ -65,7 +65,27 @@ if ((DEFINED CXX_EXTRA_FLAGS) AND (NOT DEFINED CXX_EXTRA_LINK_FLAGS))
     set(CXX_EXTRA_LINK_FLAGS ${CXX_EXTRA_FLAGS})
 endif ()
 
+option(USE_TBB "Enable oneTBB library for *supported* models. Enabling this on models that
+                don't explicitly link against TBB is a no-op, see description of your selected
+                model on how this is used." OFF)
+
+if (USE_TBB)
+    include(FetchContent)
+    FetchContent_Declare(
+            TBB
+            GIT_REPOSITORY https://github.com/oneapi-src/oneTBB.git
+            GIT_TAG faaf43c4ab22cb4b4267d65d5e218fa58800eea8
+    )
+    # Not using FetchContent_MakeAvailable because we need EXCLUDE_FROM_ALL
+    FetchContent_GetProperties(TBB)
+    if (NOT TBB_POPULATED)
+        FetchContent_Populate(TBB)
+        add_subdirectory(${tbb_SOURCE_DIR} ${tbb_BINARY_DIR} EXCLUDE_FROM_ALL)
+    endif ()
+endif ()
+
 option(USE_CPU_FEATURES "Enable the cpu_feature library for host CPU detection" OFF)
+
 
 if (USE_CPU_FEATURES)
     include(FetchContent)
@@ -98,6 +118,7 @@ register_model(tbb TBB fasten.hpp)
 register_model(thrust THRUST fasten.hpp) # TODO
 
 
+set(MODEL std-indices)
 set(USAGE ON CACHE BOOL "Whether to print all custom flags for the selected model")
 
 message(STATUS "Available models:  ${REGISTERED_MODELS}")
