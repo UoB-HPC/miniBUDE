@@ -117,8 +117,6 @@ register_model(raja USE_RAJA fasten.hpp)
 register_model(tbb TBB fasten.hpp)
 register_model(thrust THRUST fasten.hpp) # TODO
 
-
-set(MODEL std-indices)
 set(USAGE ON CACHE BOOL "Whether to print all custom flags for the selected model")
 
 message(STATUS "Available models:  ${REGISTERED_MODELS}")
