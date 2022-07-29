@@ -26,81 +26,6 @@ template <size_t PPWI> class IMPL_CLS final : public Bude<PPWI> {
 
   template <typename T, sycl::access::mode A = R> using accessor1 = sycl::accessor<T, 1, A, Global>;
 
-  // 1D = T
-  // 2D =
-
-  template <typename dataT,
-            sycl::access::mode accessmode, //
-            sycl::access::target accessTarget = sycl::access::target::global_buffer,
-            sycl::access::placeholder isPlaceholder = sycl::access::placeholder::false_t>
-  struct AccessorIterator {
-    using iterator_category = std::random_access_iterator_tag;
-    using difference_type = std::ptrdiff_t;
-    using value_type = dataT;
-    using pointer = dataT *;
-    using reference = dataT;
-
-    using Accessor = sycl::accessor<dataT, 1, accessmode, accessTarget, isPlaceholder>;
-
-    explicit AccessorIterator(Accessor &accessor, int offset) : accessor(accessor), idx(offset) {}
-
-    reference operator*() const { return accessor[idx]; }
-    const AccessorIterator &operator++() {
-      ++idx;
-      return *this;
-    }
-    AccessorIterator operator++(int) {
-      AccessorIterator copy(*this);
-      ++idx;
-      return copy;
-    }
-    const AccessorIterator &operator+=(int by) {
-      idx += by;
-      return *this;
-    }
-
-    const AccessorIterator &operator--() {
-      --idx;
-      return *this;
-    }
-    AccessorIterator operator--(int) {
-      AccessorIterator copy(*this);
-      --idx;
-      return copy;
-    }
-
-    value_type operator[](const difference_type &i) const { return accessor[idx + i]; }
-
-    difference_type operator-(const AccessorIterator &it) const { return idx - it.idx; }
-    AccessorIterator operator+(const value_type v) const { return AccessorIterator(idx + v); }
-
-    bool operator==(const AccessorIterator &other) const { return idx == other.idx; }
-    bool operator!=(const AccessorIterator &other) const { return idx != other.idx; }
-    bool operator<(const AccessorIterator &other) const { return idx < other.idx; }
-
-  private:
-    Accessor accessor;
-    int idx;
-  };
-
-  template <typename dataT, int dimensions, //
-            sycl::access::mode accessmode,  //
-            sycl::access::target accessTarget = sycl::access::target::global_buffer,
-            sycl::access::placeholder isPlaceholder = sycl::access::placeholder::false_t>
-  static AccessorIterator<dataT, accessmode, accessTarget, isPlaceholder>
-  begin(sycl::accessor<dataT, dimensions, accessmode, accessTarget, isPlaceholder> actual) {
-    return AccessorIterator<dataT, accessmode, accessTarget, isPlaceholder>(actual, 0);
-  }
-
-  template <typename dataT, int dimensions, //
-            sycl::access::mode accessmode,  //
-            sycl::access::target accessTarget = sycl::access::target::global_buffer,
-            sycl::access::placeholder isPlaceholder = sycl::access::placeholder::false_t>
-  static AccessorIterator<dataT, accessmode, accessTarget, isPlaceholder>
-  end(sycl::accessor<dataT, dimensions, accessmode, accessTarget, isPlaceholder> actual) {
-    return AccessorIterator<dataT, accessmode, accessTarget, isPlaceholder>(actual, actual.template get_count());
-  }
-
   static void fasten_main(sycl::handler &h,                                                           //
                           size_t wgsize, size_t ntypes, size_t nposes,                                //
                           const accessor1<Atom> &proteins,                                            //
@@ -166,7 +91,7 @@ template <size_t PPWI> class IMPL_CLS final : public Bude<PPWI> {
       item.wait_for(event);
 
       // Loop over ligand atoms
-      for (size_t il = 0; il < ligands.template get_count(); il++) {
+      for (size_t il = 0; il < ligands.get_count(); il++) {
         // Load ligand atom data
         const Atom l_atom = ligands[il];
         const FFParams l_params = local_forcefield[l_atom.type];
@@ -186,8 +111,9 @@ template <size_t PPWI> class IMPL_CLS final : public Bude<PPWI> {
         }
 
         // Loop over protein atoms
-        std::for_each(begin(proteins), end(proteins), [&](const Atom &p_atom) {
+        for (size_t ip = 0; ip < proteins.get_count(); ip++) {
           // Load protein atom data
+          const Atom p_atom = proteins[ip];
           const FFParams p_params = local_forcefield[p_atom.type];
 
           const float radij = p_params.radius + l_params.radius;
@@ -240,7 +166,7 @@ template <size_t PPWI> class IMPL_CLS final : public Bude<PPWI> {
             dslv_e *= (zone1 ? ONE : coeff);
             etot[i] += dslv_e;
           }
-        });
+        };
       }
 
       // Write results
