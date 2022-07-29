@@ -76,11 +76,53 @@ if (USE_TBB)
             GIT_REPOSITORY https://github.com/oneapi-src/oneTBB.git
             GIT_TAG faaf43c4ab22cb4b4267d65d5e218fa58800eea8
     )
+    # Don't fail builds on waring (TBB has -Wall while not being free of warnings from unused symbols...)
+    set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+    set(TBB_STRICT OFF)
     # Not using FetchContent_MakeAvailable because we need EXCLUDE_FROM_ALL
     FetchContent_GetProperties(TBB)
     if (NOT TBB_POPULATED)
         FetchContent_Populate(TBB)
         add_subdirectory(${tbb_SOURCE_DIR} ${tbb_BINARY_DIR} EXCLUDE_FROM_ALL)
+    endif ()
+endif ()
+
+option(USE_ONEDPL "Enable oneDPL library for *supported* models. Enabling this on models that
+                   don't explicitly link against DPL is a no-op, see description of your selected
+                   model on how this is used." OFF)
+
+if (USE_ONEDPL)
+    FetchContent_Declare(
+            oneDPL
+            GIT_REPOSITORY https://github.com/oneapi-src/oneDPL.git
+            GIT_TAG oneDPL-2021.7.0-release
+    )
+    string(TOLOWER ${USE_ONEDPL} ONEDPL_BACKEND)
+    # XXX oneDPL looks for omp instead of openmp, which mismatches(!) with ONEDPL_PAR_BACKEND if using find_package
+    if (ONEDPL_BACKEND STREQUAL "openmp")
+        set(ONEDPL_BACKEND omp)
+    endif ()
+    # Not using FetchContent_MakeAvailable (CMake>= 3.14) because we need EXCLUDE_FROM_ALL
+    FetchContent_GetProperties(oneDPL)
+    if (NOT oneDPL_POPULATED)
+        FetchContent_Populate(oneDPL)
+        if (USE_TBB)
+            macro(find_package NAME)
+                if ("${NAME}" STREQUAL "TBB")
+                    message(STATUS "Discarding oneDPL's call to find_package(${NAME} ${ARGN})")
+                else ()
+                    _find_package(${NAME} ${ARGN})
+                endif ()
+            endmacro()
+        endif ()
+        add_subdirectory(${onedpl_SOURCE_DIR} ${onedpl_BINARY_DIR} EXCLUDE_FROM_ALL)
+
+        # Fixup oneDPL's omission on setting DPCPP definitions.
+        # We do this after the creation of the oneDPL target.
+        if (ONEDPL_BACKEND MATCHES "^(dpcpp|dpcpp_only)$")
+            target_compile_definitions(oneDPL INTERFACE ONEDPL_USE_DPCPP_BACKEND=1)
+        endif ()
+
     endif ()
 endif ()
 
@@ -216,7 +258,7 @@ add_dependencies(${EXE_NAME} check_git)
 if (COMMAND setup_target)
     setup_target(${EXE_NAME})
 endif ()
-#target_compile_definitions(${EXE_NAME} PRIVATE USE_PPWI=${PPWI})
+target_compile_definitions(${EXE_NAME} PRIVATE USE_PPWI=${PPWI})
 
 if ((CMAKE_GENERATOR MATCHES "Unix Makefiles") OR (CMAKE_GENERATOR MATCHES "Ninja"))
     add_custom_target(extract_compile_commands ALL

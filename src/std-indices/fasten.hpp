@@ -1,10 +1,9 @@
 #pragma once
 
 #include "../bude.h"
-#include <algorithm>
+#include "dpl_shim.h"
 #include <cstdint>
 #include <cstdlib>
-#include <execution>
 #include <string>
 
 #ifdef IMPL_CLS
@@ -12,64 +11,86 @@
 #endif
 #define IMPL_CLS StdIndicesBude
 
-template <typename Z = size_t> class ranged {
-  Z from, to;
-
+// A lightweight counting iterator which will be used by the STL algorithms
+// NB: C++ <= 17 doesn't have this built-in, and it's only added later in ranges-v3 (C++2a) which this
+// implementation doesn't target
+template <typename N> class ranged {
 public:
-  ranged(Z from, Z to) : from(from), to(to) {}
   class iterator {
-    Z num;
+    friend class ranged;
 
   public:
-    using difference_type = Z;
-    using value_type = Z;
-    using pointer = const Z *;
-    using reference = Z &;
+    using difference_type = N;
+    using value_type = N;
+    using pointer = const N *;
+    using reference = N;
     using iterator_category = std::random_access_iterator_tag;
-    explicit iterator(Z _num = 0) : num(_num) {}
+
+    // XXX This is not part of the iterator spec, it gets picked up by oneDPL if enabled.
+    // Without this, the DPL SYCL backend collects the iterator data on the host and copies to the device.
+    // This type is unused for any other STL impl.
+    using is_passed_directly = std::true_type;
+
+    reference operator*() const { return i_; }
     iterator &operator++() {
-      num++;
+      ++i_;
       return *this;
     }
     iterator operator++(int) {
-      iterator retval = *this;
-      ++(*this);
-      return retval;
+      iterator copy(*this);
+      ++i_;
+      return copy;
     }
-    iterator operator+(const value_type v) const { return iterator(num + v); }
 
-    bool operator==(iterator other) const { return num == other.num; }
-    bool operator!=(iterator other) const { return *this != other; }
-    bool operator<(iterator other) const { return num < other.num; }
-    reference operator*() { return num; }
-    difference_type operator-(const iterator &it) const { return num - it.num; }
+    iterator &operator--() {
+      --i_;
+      return *this;
+    }
+    iterator operator--(int) {
+      iterator copy(*this);
+      --i_;
+      return copy;
+    }
 
-    value_type operator[](const difference_type &i) const { return num + i; }
+    iterator &operator+=(N by) {
+      i_ += by;
+      return *this;
+    }
+
+    value_type operator[](const difference_type &i) const { return i_ + i; }
+
+    difference_type operator-(const iterator &it) const { return i_ - it.i_; }
+    iterator operator+(const value_type v) const { return iterator(i_ + v); }
+
+    bool operator==(const iterator &other) const { return i_ == other.i_; }
+    bool operator!=(const iterator &other) const { return i_ != other.i_; }
+    bool operator<(const iterator &other) const { return i_ < other.i_; }
+
+  protected:
+    explicit iterator(N start) : i_(start) {}
+
+  private:
+    N i_;
   };
-  iterator begin() { return iterator(from); }
-  iterator end() { return iterator(to >= from ? to + 1 : to - 1); }
+
+  [[nodiscard]] iterator begin() const { return begin_; }
+  [[nodiscard]] iterator end() const { return end_; }
+  ranged(N begin, N end) : begin_(begin), end_(end) {}
+
+private:
+  iterator begin_;
+  iterator end_;
 };
 
 template <size_t PPWI> class IMPL_CLS final : public Bude<PPWI> {
 
-  static void fasten_main(const Params &p, std::vector<float> &results) {
+  static void fasten_main(const ranged<int> &range, size_t natlig, size_t natpro,                          //
+                          const Atom *proteins, const Atom *ligands,                                       //
+                          const float *transforms_0, const float *transforms_1, const float *transforms_2, //
+                          const float *transforms_3, const float *transforms_4, const float *transforms_5, //
+                          const FFParams *forcefield, float *energies) {
 
-    auto groups = ranged<int>(0, p.nposes() / PPWI);
-
-    //    const auto natpro = p.natpro();
-    //    const auto natlig = p.natlig();
-    //    const auto   proteins = p.protein.data();
-    //    const auto   ligands = p.ligand.data();
-    //    const auto   forcefield = p.forcefield.data();
-    //    const auto   transforms_0 = p.poses[0].data();
-    //    const auto   transforms_1 = p.poses[1].data();
-    //    const auto   transforms_2 = p.poses[2].data();
-    //    const auto   transforms_3 = p.poses[3].data();
-    //    const auto   transforms_4 = p.poses[4].data();
-    //    const auto   transforms_5 = p.poses[5].data();
-    //    const auto   energies = results.data();
-
-    std::for_each(std::execution::par_unseq, groups.begin(), groups.end(), [&, energies = results.data()](int group) {
+    std::for_each(exec_policy, range.begin(), range.end(), [=](int group) {
       std::array<std::array<Vec4<float>, 3>, PPWI> transform = {};
       std::array<float, PPWI> etot = {};
 
@@ -77,30 +98,31 @@ template <size_t PPWI> class IMPL_CLS final : public Bude<PPWI> {
       for (int l = 0; l < PPWI; l++) {
         int ix = group * PPWI + l;
 
-        const float sx = std::sin(p.poses[0][ix]);
-        const float cx = std::cos(p.poses[0][ix]);
-        const float sy = std::sin(p.poses[1][ix]);
-        const float cy = std::cos(p.poses[1][ix]);
-        const float sz = std::sin(p.poses[2][ix]);
-        const float cz = std::cos(p.poses[2][ix]);
+        const float sx = std::sin(transforms_0[ix]);
+        const float cx = std::cos(transforms_0[ix]);
+        const float sy = std::sin(transforms_1[ix]);
+        const float cy = std::cos(transforms_1[ix]);
+        const float sz = std::sin(transforms_2[ix]);
+        const float cz = std::cos(transforms_2[ix]);
 
         transform[l][0].x = cy * cz;
         transform[l][0].y = sx * sy * cz - cx * sz;
         transform[l][0].z = cx * sy * cz + sx * sz;
-        transform[l][0].w = p.poses[3][ix];
+        transform[l][0].w = transforms_3[ix];
         transform[l][1].x = cy * sz;
         transform[l][1].y = sx * sy * sz + cx * cz;
         transform[l][1].z = cx * sy * sz - sx * cz;
-        transform[l][1].w = p.poses[4][ix];
+        transform[l][1].w = transforms_4[ix];
         transform[l][2].x = -sy;
         transform[l][2].y = sx * cy;
         transform[l][2].z = cx * cy;
-        transform[l][2].w = p.poses[5][ix];
+        transform[l][2].w = transforms_5[ix];
       }
 
-      // Loop over ligand atoms
-      for (const Atom &l_atom : p.ligand) {
-        const FFParams l_params = p.forcefield[l_atom.type];
+      for (int l = 0; l < natlig; l++) {
+        // Loop over ligand atoms
+        const Atom l_atom = ligands[l];
+        const FFParams l_params = forcefield[l_atom.type];
         const int lhphb_ltz = l_params.hphb < ZERO;
         const int lhphb_gtz = l_params.hphb > ZERO;
 
@@ -108,15 +130,19 @@ template <size_t PPWI> class IMPL_CLS final : public Bude<PPWI> {
         std::array<Vec3<float>, PPWI> lpos = {};
 #pragma omp simd
         for (int l = 0; l < PPWI; l++) {
-          lpos[l].x = transform[l][0].w + l_atom.x * transform[l][0].x + l_atom.y * transform[l][0].y + l_atom.z * transform[l][0].z;
-          lpos[l].y = transform[l][1].w + l_atom.x * transform[l][1].x + l_atom.y * transform[l][1].y + l_atom.z * transform[l][1].z;
-          lpos[l].z = transform[l][2].w + l_atom.x * transform[l][2].x + l_atom.y * transform[l][2].y + l_atom.z * transform[l][2].z;
+          lpos[l].x = transform[l][0].w + l_atom.x * transform[l][0].x + l_atom.y * transform[l][0].y +
+                      l_atom.z * transform[l][0].z;
+          lpos[l].y = transform[l][1].w + l_atom.x * transform[l][1].x + l_atom.y * transform[l][1].y +
+                      l_atom.z * transform[l][1].z;
+          lpos[l].z = transform[l][2].w + l_atom.x * transform[l][2].x + l_atom.y * transform[l][2].y +
+                      l_atom.z * transform[l][2].z;
         }
 
         // Loop over protein atoms
-        for (const Atom &p_atom : p.protein) {
-          //          // Load protein atom data
-          const FFParams p_params = p.forcefield[p_atom.type];
+        for (int p = 0; p < natpro; p++) {
+          const Atom p_atom = proteins[p];
+          // Load protein atom data
+          const FFParams p_params = forcefield[p_atom.type];
 
           const float radij = p_params.radius + l_params.radius;
           const float r_radij = ONE / radij;
@@ -168,27 +194,20 @@ template <size_t PPWI> class IMPL_CLS final : public Bude<PPWI> {
         }
       }
 
-      ////#pragma omp simd
-      //          for (int l = 0; l < PPWI; l++) {
-      //            etot[l] *= HALF;
-      //          }
-      //
-      //          return std::make_pair(group, etot);
+      // Write result
 
-// Write result
 #pragma omp simd
       for (int l = 0; l < PPWI; l++) {
         energies[group * PPWI + l] = etot[l] * HALF;
       }
     });
-
-    //    energies.clear();
-    //    for (auto &[g, xs] : buffer) {
-    //      energies.insert(energies.begin() + (PPWI * g), xs.begin(), xs.end());
-    //    }
-
-    //    std::transform(buffer.begin(),  buffer.end(), energies.begin(), )
   }
+
+  template <typename C> auto alloc(const C &source, bool copy = true) const {
+    auto ptr = alloc_raw<typename C::value_type>(source.size());
+    if (copy) std::copy(source.begin(), source.end(), ptr);
+    return ptr;
+  };
 
 public:
   IMPL_CLS() = default;
@@ -200,27 +219,50 @@ public:
   [[nodiscard]] Sample fasten(const Params &p, size_t wgsize, size_t) const override {
 
     if (wgsize != 1 && wgsize != 0) {
-      throw std::invalid_argument("Only wgsize = {1|0} (i.e no workgroup) are supported for OpenMP, got " +
+      throw std::invalid_argument("Only wgsize = {1|0} (i.e no workgroup) are supported for std-indices, got " +
                                   std::to_string((wgsize)));
     }
 
     Sample sample(PPWI, wgsize, p.nposes());
 
-    //    std::vector<size_t> groups(p.nposes() / PPWI);
+    auto contextStart = now();
+    const auto proteins = alloc(p.protein);
+    const auto ligands = alloc(p.ligand);
+    const auto forcefield = alloc(p.forcefield);
+    const auto transforms_0 = alloc(p.poses[0]);
+    const auto transforms_1 = alloc(p.poses[1]);
+    const auto transforms_2 = alloc(p.poses[2]);
+    const auto transforms_3 = alloc(p.poses[3]);
+    const auto transforms_4 = alloc(p.poses[4]);
+    const auto transforms_5 = alloc(p.poses[5]);
+    auto energies = alloc(sample.energies, false);
+    auto contextEnd = now();
+    sample.contextTime = {contextStart, contextEnd};
 
-    //    std::generate(groups.begin(), groups.end(), [n = 0]() mutable { return n++; });
-
-    //    std::vector<std::array<float, PPWI>> buffer(groups.size());
+    const auto range = ranged<int>(0, p.nposes() / PPWI);
 
     for (size_t i = 0; i < p.totalIterations(); ++i) {
       auto kernelStart = now();
-      fasten_main(p, sample.energies);
+      fasten_main(range, p.natlig(), p.natpro(),                                                      //
+                  proteins, ligands,                                                                  //
+                  transforms_0, transforms_1, transforms_2, transforms_3, transforms_4, transforms_5, //
+                  forcefield, energies);
       auto kernelEnd = now();
       sample.kernelTimes.emplace_back(kernelStart, kernelEnd);
     }
 
-    //    std::transform(buffer.begin(),  buffer.end(), sample.energies.begin(), []);
-    //    sample.energies.insert(sample.energies.end(), )
+    std::copy(energies, energies + sample.energies.size(), sample.energies.begin());
+
+    dealloc_raw(proteins);
+    dealloc_raw(ligands);
+    dealloc_raw(forcefield);
+    dealloc_raw(transforms_0);
+    dealloc_raw(transforms_1);
+    dealloc_raw(transforms_2);
+    dealloc_raw(transforms_3);
+    dealloc_raw(transforms_4);
+    dealloc_raw(transforms_5);
+    dealloc_raw(energies);
 
     return sample;
   };
