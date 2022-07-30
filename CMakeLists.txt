@@ -258,6 +258,12 @@ add_dependencies(${EXE_NAME} check_git)
 if (COMMAND setup_target)
     setup_target(${EXE_NAME})
 endif ()
+
+# see https://gitlab.kitware.com/cmake/cmake/-/issues/17379
+if (CMAKE_CUDA_COMPILER)
+    string(REGEX REPLACE "\\," "\\\\," PPWI "${PPWI}")
+endif ()
+
 target_compile_definitions(${EXE_NAME} PRIVATE USE_PPWI=${PPWI})
 
 if ((CMAKE_GENERATOR MATCHES "Unix Makefiles") OR (CMAKE_GENERATOR MATCHES "Ninja"))
