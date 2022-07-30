@@ -8,6 +8,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 # some nicer defaults for standard C++
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+include(FetchContent)
 
 
 ## Flags for debugging only, enable for development (ASan only works on few models)
@@ -70,7 +71,6 @@ option(USE_TBB "Enable oneTBB library for *supported* models. Enabling this on m
                 model on how this is used." OFF)
 
 if (USE_TBB)
-    include(FetchContent)
     FetchContent_Declare(
             TBB
             GIT_REPOSITORY https://github.com/oneapi-src/oneTBB.git
@@ -130,7 +130,6 @@ option(USE_CPU_FEATURES "Enable the cpu_feature library for host CPU detection" 
 
 
 if (USE_CPU_FEATURES)
-    include(FetchContent)
     FetchContent_Declare(
             cpu_features
             URL https://github.com/google/cpu_features/archive/refs/tags/v0.6.0.tar.gz
