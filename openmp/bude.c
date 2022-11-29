@@ -303,10 +303,10 @@ void printTimings(double start, double end)
 
   // Compute FLOP/s
   double ops_per_wg = WGSIZE*27 +
-                      params.natlig * (
+                      (long)params.natlig * (
                         2 +
                         WGSIZE*18 +
-                        params.natpro * (10 + WGSIZE*30)
+                        (long)params.natpro * (10 + WGSIZE*30)
                         ) +
                       WGSIZE;
   double total_ops  = ops_per_wg * (params.nposes/WGSIZE);
