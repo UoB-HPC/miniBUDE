@@ -8,7 +8,7 @@ Prerequisites
 
  * Chapel >= 1.28
 
-### Block Sizes
+### Block Sizes
 
 This implementation includes a tunable block size similar to OpenCL workgroups.
 The default value is `64`, which is suitable for 512-bit vectors.
