@@ -25,7 +25,7 @@ module Bude {
   param NPNPDIST: real(32) = 5.5;
   param NPPDIST: real(32) = 1.0;
 
-  param WORK_GROUP = 0..<WGSIZE;
+  const WORK_GROUP = 0..<WGSIZE;
 
   record atom {
     var x, y, z: real(32);
