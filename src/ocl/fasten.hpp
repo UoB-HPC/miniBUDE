@@ -224,7 +224,7 @@ public:
     auto p_ = p; // XXX cl::Buffer doesn't cast away const even if readOnly is true so we make a mutable copy here first
     cl::Buffer proteins(context, p_.protein.begin(), p_.protein.end(), true);
     cl::Buffer ligands(context, p_.ligand.begin(), p_.ligand.end(), true);
-    cl::Buffer forcefields(p_.forcefield.begin(), p_.forcefield.end(), true);
+    cl::Buffer forcefields(context, p_.forcefield.begin(), p_.forcefield.end(), true);
     cl::Buffer transforms_0(context, p_.poses[0].begin(), p_.poses[0].end(), true);
     cl::Buffer transforms_1(context, p_.poses[1].begin(), p_.poses[1].end(), true);
     cl::Buffer transforms_2(context, p_.poses[2].begin(), p_.poses[2].end(), true);
