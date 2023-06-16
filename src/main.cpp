@@ -301,21 +301,6 @@ parseParams(const std::vector<std::string> &args) {
                                 std::to_string(maxPoses) + ") for deck");
   }
 
-  for (auto wgsize : wgsizes) {
-    for (auto ppwi : ppwis) {
-
-      if (nposes < ppwi * wgsize) {
-        throw std::invalid_argument("pose count " + std::to_string(nposes) + " <= " + std::to_string(wgsize) +
-                                    "(wgsize) *" + std::to_string(ppwi) + "(ppwi)");
-      }
-
-      if (nposes % (ppwi * wgsize) != 0) {
-        throw std::invalid_argument("pose count " + std::to_string(nposes) + " % (" + std::to_string(wgsize) +
-                                    "(wgsize) *" + std::to_string(ppwi) + "(ppwi)) != 0");
-      }
-    }
-  }
-
   for (size_t i = 0; i < 6; ++i) {
     params.poses[i].resize(nposes);
     std::copy(std::next(poses.cbegin(), int(i * maxPoses)), std::next(poses.cbegin(), int(i * maxPoses + nposes)),
@@ -525,6 +510,19 @@ bool run(const Params &p, const std::vector<size_t> &wgsizes, const std::vector<
       std::vector<Result> results;
       for (auto &ppwi : ppwis) {
         for (auto &wgsize : wgsizes) {
+
+          if (p.nposes() < ppwi * wgsize) {
+            std::cout << " # WARNING: pose count " << p.nposes() << " <= (" << wgsize << " (wgsize) * " << ppwi
+                      << " (ppwi)), skipping" << std::endl;
+            continue;
+          }
+          if (p.nposes() % (ppwi * wgsize) != 0) {
+
+            std::cout << " # WARNING: pose count " << p.nposes() << " % (" << wgsize << " (wgsize) * " << ppwi
+                      << " (ppwi)) != 0, skipping" << std::endl;
+            continue;
+          }
+
           auto result = evaluate(p, kernel[ppwi](wgsize, size_t(dev.first)), true);
           results.push_back(result);
           std::cout << "# (ppwi=" << ppwi << ",wgsize=" << wgsize << ",valid=" << result.valid << ")" << std::endl;
