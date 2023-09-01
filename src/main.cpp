@@ -100,7 +100,7 @@ template <typename N> struct SummaryStats {
     sum = std::accumulate(ys.begin(), ys.end(), N(0));
     mean = sum / ys.size();
     variance =
-        std::accumulate(ys.begin(), ys.end(), N(0), [&](auto acc, auto t) { return acc + std::pow(t - mean, 2); }) /
+        std::accumulate(ys.begin(), ys.end(), N(0), [&](auto acc, auto t) { return acc + std::pow(t - mean, 2.0); }) /
         ys.size();
     stdDev = std::sqrt(variance);
   }
