@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <fstream>
+#include <sstream>
 #include <functional>
 #include <iostream>
 #include <unordered_map>
