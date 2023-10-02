@@ -12,6 +12,8 @@
 #endif
 #define IMPL_CLS OmpBude
 
+static volatile float discard;
+
 template <size_t PPWI> class IMPL_CLS final : public Bude<PPWI> {
 
   static inline void fasten_main(size_t group, size_t ntypes, size_t nposes, size_t natlig, size_t natpro,        //
@@ -245,6 +247,8 @@ public:
                     poses_0, poses_1, poses_2, poses_3, poses_4, poses_5, //
                     forcefield, energies);
       }
+      #pragma omp target update from(energies[:1])
+      discard = energies[0];
       auto kernelEnd = now();
       sample.kernelTimes.emplace_back(kernelStart, kernelEnd);
     }
