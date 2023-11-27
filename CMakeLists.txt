@@ -70,16 +70,20 @@ option(USE_TBB "Enable oneTBB library for *supported* models. Enabling this on m
                 don't explicitly link against TBB is a no-op, see description of your selected
                 model on how this is used." OFF)
 
-if (USE_TBB)
+option(FETCH_TBB "Fetch (download) the oneTBB library for *supported* models. This uses CMake's
+                  FetchContent feature. Specify version by setting FETCH_TBB_VERSION" OFF)
+set(FETCH_TBB_VERSION "v2021.10.0" CACHE STRING "Specify version of oneTBB to use if FETCH_TBB is ON")
+
+if (FETCH_TBB)
     FetchContent_Declare(
             TBB
             GIT_REPOSITORY https://github.com/oneapi-src/oneTBB.git
-            GIT_TAG faaf43c4ab22cb4b4267d65d5e218fa58800eea8
+            GIT_TAG "${FETCH_TBB_VERSION}"
     )
     # Don't fail builds on waring (TBB has -Wall while not being free of warnings from unused symbols...)
     set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
     set(TBB_STRICT OFF)
-    # Not using FetchContent_MakeAvailable because we need EXCLUDE_FROM_ALL
+    # Not using FetchContent_MakeAvailable (CMake>= 3.14) because we need EXCLUDE_FROM_ALL
     FetchContent_GetProperties(TBB)
     if (NOT TBB_POPULATED)
         FetchContent_Populate(TBB)
@@ -91,11 +95,15 @@ option(USE_ONEDPL "Enable oneDPL library for *supported* models. Enabling this o
                    don't explicitly link against DPL is a no-op, see description of your selected
                    model on how this is used." OFF)
 
-if (USE_ONEDPL)
+option(FETCH_ONEDPL "Fetch (download) the oneDPL library for *supported* models. This uses CMake's
+                  FetchContent feature. Specify version by setting FETCH_ONEDPL_VERSION" OFF)
+set(FETCH_ONEDPL_VERSION "oneDPL-2022.2.0-rc1" CACHE STRING "Specify version of oneTBB to use if FETCH_ONEDPL is ON")
+
+if (FETCH_ONEDPL)
     FetchContent_Declare(
             oneDPL
             GIT_REPOSITORY https://github.com/oneapi-src/oneDPL.git
-            GIT_TAG oneDPL-2022.2.0-rc1
+            GIT_TAG "${FETCH_ONEDPL_VERSION}"
     )
     string(TOLOWER ${USE_ONEDPL} ONEDPL_BACKEND)
     # XXX oneDPL looks for omp instead of openmp, which mismatches(!) with ONEDPL_PAR_BACKEND if using find_package
