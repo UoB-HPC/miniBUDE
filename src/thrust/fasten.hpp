@@ -34,7 +34,12 @@ public:
          transforms_0 = transforms_0.data(), transforms_1 = transforms_1.data(), transforms_2 = transforms_2.data(), //
          transforms_3 = transforms_3.data(), transforms_4 = transforms_4.data(), transforms_5 = transforms_5.data(), //
          forcefield = forcefield.data(),                                                                             //
-         energies = energies.data()] __device__ __host__(const int group) {
+         energies = energies.data()] __device__
+#ifndef __NVCC__
+            // otherwise, we get "init-captures are not allowed for extended __host__ __device__"
+            __host__
+#endif
+        (const int group) {
           std::array<std::array<Vec4<float>, 3>, PPWI> transform = {};
           std::array<float, PPWI> etot = {};
 
