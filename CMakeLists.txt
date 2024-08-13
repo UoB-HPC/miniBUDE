@@ -37,7 +37,7 @@ endif ()
 
 # setup some defaults flags for everything
 set(DEFAULT_DEBUG_FLAGS -O2)
-set(DEFAULT_RELEASE_FLAGS -O3 -march=native) # -ffast-math
+set(DEFAULT_RELEASE_FLAGS -O3 -march=native -ffast-math)
 
 macro(hint_flag FLAG DESCRIPTION)
     if (NOT DEFINED ${FLAG})
