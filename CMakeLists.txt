@@ -267,7 +267,7 @@ if (COMMAND setup_target)
 endif ()
 
 # see https://gitlab.kitware.com/cmake/cmake/-/issues/17379
-if (CMAKE_CUDA_COMPILER)
+if (CMAKE_CUDA_COMPILER MATCHES "nvcc$")
     string(REGEX REPLACE "\\," "\\\\," PPWI "${PPWI}")
 endif ()
 

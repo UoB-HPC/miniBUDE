@@ -16,6 +16,10 @@ register_flag_required(CMAKE_CUDA_COMPILER
 register_flag_required(CUDA_ARCH
         "Nvidia architecture, will be passed in via `-arch=` (e.g `sm_70`) for nvcc")
 
+register_flag_optional(CUDA_CLANG_DRIVER
+        "Disable any nvcc-specific flags so that setting CMAKE_CUDA_COMPILER to clang++ can compile successfully"
+        "OFF")
+
 register_flag_optional(CUDA_EXTRA_FLAGS
         "Additional CUDA flags passed to nvcc, this is appended after `CUDA_ARCH`"
         "")
@@ -28,12 +32,20 @@ macro(setup)
         cmake_policy(SET CMP0104 OLD)
     endif ()
 
-    enable_language(CUDA)
-    register_definitions(MEM=${MEM})
+    set(CMAKE_CXX_STANDARD 17)
 
-    # add -forward-unknown-to-host-compiler for compatibility reasons
-    # add -std=c++17 manually as older CMake seems to omit this (source gets treated as C otherwise)
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -std=c++17 -forward-unknown-to-host-compiler -arch=${CUDA_ARCH} -use_fast_math -restrict -keep ${CUDA_EXTRA_FLAGS}")
+    if (CUDA_CLANG_DRIVER)
+        if (CMAKE_VERSION VERSION_LESS "3.18.0")
+            message(FATAL_ERROR "Using clang driver for CUDA is only supported for CMake >= 3.18")
+        endif ()
+        set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -std=c++17 --cuda-gpu-arch=${CUDA_ARCH} ${CUDA_EXTRA_FLAGS}")
+    else ()
+        # add -forward-unknown-to-host-compiler for compatibility reasons
+        # add -std=c++17 manually as older CMake seems to omit this (source gets treated as C otherwise)
+        set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -std=c++17 -forward-unknown-to-host-compiler -extended-lambda -use_fast_math -restrict -arch=${CUDA_ARCH} ${CUDA_EXTRA_FLAGS}")
+    endif ()
+
+    enable_language(CUDA)
 
     # CMake defaults to -O2 for CUDA at Release, let's wipe that and use the global RELEASE_FLAG
     # appended later
