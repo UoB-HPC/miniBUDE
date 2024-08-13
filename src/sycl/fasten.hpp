@@ -55,10 +55,13 @@ template <size_t PPWI> class IMPL_CLS final : public Bude<PPWI> {
       // XXX async_work_group_copy takes only gentypes, so no FFParams,
       //  casting *_ptr<ElementType> parameter requires first converting to void and then to gentype
       //  although probably free, there must be a better way of doing this
-      sycl::device_event event = item.async_work_group_copy<float>(
-          sycl::local_ptr<float>(sycl::local_ptr<void>(local_forcefield.get_pointer())),
-          sycl::global_ptr<float>(sycl::global_ptr<void>(forcefields.get_pointer())),
-          ntypes * sizeof(FFParams) / sizeof(float));
+      // sycl::device_event event = item.async_work_group_copy<float>(
+      //     sycl::local_ptr<float>(sycl::local_ptr<void>(local_forcefield.get_pointer())),
+      //     sycl::global_ptr<float>(sycl::global_ptr<void>(forcefields.get_pointer())),
+      //     ntypes * sizeof(FFParams) / sizeof(float));
+
+      for (int i = lid; i < ntypes; i += lrange)
+        local_forcefield[i] = forcefields[i];
 
       // Compute transformation matrix to private memory
       const size_t lsz = lrange;
@@ -88,7 +91,8 @@ template <size_t PPWI> class IMPL_CLS final : public Bude<PPWI> {
         etot[i] = ZERO;
       }
 
-      item.wait_for(event);
+      // item.wait_for(event);
+      item.barrier(sycl::access::fence_space::local_space);
 
       // Loop over ligand atoms
       for (size_t il = 0; il < ligands.get_count(); il++) {
