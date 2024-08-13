@@ -76,6 +76,8 @@
   #include "sycl/fasten.hpp"
 #elif defined(OMP)
   #include "omp/fasten.hpp"
+#elif defined(SERIAL)
+  #include "serial/fasten.hpp"
 #elif defined(THRUST)
   #include "thrust/fasten.hpp"
 #else
