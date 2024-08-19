@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [v2.0] - 2022-??-??
+## [v2.0] - 2024-08-19
 
 ### Added
 - CI via GitHub Actions
@@ -12,12 +12,12 @@ All notable changes to this project will be documented in this file.
 - Flag for machine-readable CSV output
 - Flag for toggling optional energy output to file
 - Executable now embeds compile commands used at build-time
-- New models: C++ std, C++20 std, Intel TBB <!--  RAJA, Thrust, Rust -->
+- New models: C++ std, C++20 std, Intel TBB, RAJA, Thrust, serial
 - Context allocation and transfer (if required) is now measured
 - Added optional `cpu_feature` library, can be disabled at build-time
 
 ### Changed
-- Human readable output now uses YAML format
+- Human-readable output now uses YAML format
 - Renamed parameter `NUM_TD_PER_THREAD` to `PPWI` for all implementations
 - Consolidated builds to use a shared CMake script, Makefiles removed
 - All implementation now share a common C++ driver with device selection based on index or name substrings
