@@ -11,8 +11,7 @@ back-to-back in a production BUDE docking run.
 > miniBUDE version 20210901 used
 > in [OpenBenchmarking](https://openbenchmarking.org/test/pts/minibude)
 > for multiple Phoronix articles and
->
-Intel [slides](https://www.servethehome.com/wp-content/uploads/2022/08/HC34-Intel-Ponte-Vecchio-Performance-miniBUDE.jpg)
+> Intel [slides](https://www.servethehome.com/wp-content/uploads/2022/08/HC34-Intel-Ponte-Vecchio-Performance-miniBUDE.jpg)
 > uses the v1 branch. The main branch contains an identical kernel but with a unified driver and
 > improved build system.
 
