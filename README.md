@@ -40,7 +40,7 @@ $ cd miniBUDE
 
 # configure the build, build type defaults to Release
 # The -DMODEL flag is required
-$ cmake -Bbuild -H. -DMODEL=<model> <model specific flags prefixed with -D...>
+$ cmake -Bbuild -H. -DMODEL=<model> -DCXX_EXTRA_FLAGS=-march=native <more model specific flags prefixed with -D...>
 
 # compile
 $ cmake --build build
@@ -53,6 +53,13 @@ The `MODEL` option selects one implementation of miniBUDE to build.
 The source for each model's implementations are located in `./src/<model>`.
 
 Currently available models are:
+
+**For optional benchmark performance, please set `-DCXX_EXTRA_FLAGS=-march=native` or
+equivalent. `-march=native` is no longer added by default to prevent bad arch selection on ARM
+platforms.**
+
+**This benchmark should be compiled with relaxed FP rules (e.g. `-O3 -ffast-math` or `-Ofast`); a
+suitable flags will set automatically if compiling with GCC/Clang and NVHPC.**
 
 ```
 omp;ocl;std-indices;std-ranges;hip;cuda;kokkos;sycl;acc;raja;tbb;thrust

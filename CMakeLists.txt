@@ -37,7 +37,10 @@ endif ()
 
 # setup some defaults flags for everything
 set(DEFAULT_DEBUG_FLAGS -O2)
-set(DEFAULT_RELEASE_FLAGS -O3 -march=native -ffast-math)
+set(DEFAULT_RELEASE_FLAGS -O3
+        $<$<OR:$<CXX_COMPILER_ID:NVHPC>,$<CXX_COMPILER_ID:PGI>>:-fast>
+        $<$<AND:$<NOT:$<CXX_COMPILER_ID:NVHPC>>,$<NOT:$<CXX_COMPILER_ID:PGI>>>:-ffast-math>
+)
 
 macro(hint_flag FLAG DESCRIPTION)
     if (NOT DEFINED ${FLAG})
@@ -283,7 +286,7 @@ if ((CMAKE_GENERATOR MATCHES "Unix Makefiles") OR (CMAKE_GENERATOR MATCHES "Ninj
             -DSRC_DIR_PREFIX="${CMAKE_SOURCE_DIR}/src"
             -DOUT_DIR_PREFIX="CMakeFiles/${EXE_NAME}.dir"
             -P ${CMAKE_SOURCE_DIR}/cmake/extract_compile_command.cmake
-            )
+    )
     add_dependencies(${EXE_NAME} extract_compile_commands)
 else ()
     set(COMPILE_COMMANDS COMPILE_FLAGS)
