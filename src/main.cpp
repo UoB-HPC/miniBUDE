@@ -8,6 +8,7 @@
 #include <fstream>
 #include <sstream>
 #include <functional>
+#include <algorithm>
 #include <iostream>
 #include <unordered_map>
 
