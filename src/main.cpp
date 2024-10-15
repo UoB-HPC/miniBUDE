@@ -388,9 +388,15 @@ std::pair<double, std::vector<size_t>> validate(const Sample &sample, const Para
     }
     // flush at the end to make sure errors are clumped together
     std::cerr << std::flush;
+    return {valid, maxDiffPct, s, SummaryStats<double>({ std::numeric_limits<double>::max() }), 0, 0, 0};
   }
+  else if( !valid)
+    return {valid, maxDiffPct, s, SummaryStats<double>({ std::numeric_limits<double>::max() }), 0, 0, 0};
+  else {
+      return {valid, maxDiffPct, s, SummaryStats<double>(msWithoutWarmup), gflops, gfinsts, interactions_per_sec};
+    }
 
-  return {valid, maxDiffPct, s, SummaryStats<double>(msWithoutWarmup), gflops, gfinsts, interactions_per_sec};
+
 }
 
 [[nodiscard]] std::pair<int, std::string> selectDevice(const std::string &needle,
