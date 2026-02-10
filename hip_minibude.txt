@@ -1,0 +1,60 @@
+miniBUDE:  
+compile_commands:
+   - "/opt/rocm-7.2.0/lib/llvm/bin/clang++  -DHIP -DUSE_PPWI=1,2,4,8,16,32,64,128 -D__HIP_ROCclr__=1 -I<SRC>/hip -I/home/shim7815/excl/miniBUDE/build-hip-log/generated -O3 -DNDEBUG -std=c++17 --offload-arch=gfx942 --offload-arch=gfx942 --offload-arch=gfx942 --offload-arch=gfx942 -O3 -o <OUT>/src/main.cpp.o -x hip -c <SRC>/main.cpp"
+vcs:
+  commit:  4977afbf8d3dc9019aba89361ca04b8b0f244054*
+  author:  "Pranav Sivaraman (psivaram@umd.edu)"
+  date:    "2024-03-14 14:44:30 -0400"
+  subject: "feat(openacc): support for clacc"
+host_cpu:
+  ~
+time: { epoch_s:1770683944, formatted: "Tue Feb 10 00:39:04 2026 GMT" }
+deck:
+  path:         "/home/shim7815/excl/miniBUDE/data/bm2"
+  poses:        65536
+  proteins:     2672
+  ligands:      2672
+  forcefields:  44
+config:
+  iterations:   10
+  poses:        65536
+  ppwi:
+    available:  [1,2,4,8,16,32,64,128]
+    selected:   [2]
+  wgsize:       [128]
+device: { index: 0,  name: "AMD Instinct MI300A (96430MB;sm_94)" }
+[BUDE_DEBUG] Transfer (H2D): Buffer | Type: 4Atom | Elements: 2672 | Total: 42752 bytes
+[BUDE_DEBUG] Transfer (H2D): Buffer | Type: 4Atom | Elements: 2672 | Total: 42752 bytes
+[BUDE_DEBUG] Transfer (H2D): Buffer | Type: f | Elements: 65536 | Total: 262144 bytes
+[BUDE_DEBUG] Transfer (H2D): Buffer | Type: f | Elements: 65536 | Total: 262144 bytes
+[BUDE_DEBUG] Transfer (H2D): Buffer | Type: f | Elements: 65536 | Total: 262144 bytes
+[BUDE_DEBUG] Transfer (H2D): Buffer | Type: f | Elements: 65536 | Total: 262144 bytes
+[BUDE_DEBUG] Transfer (H2D): Buffer | Type: f | Elements: 65536 | Total: 262144 bytes
+[BUDE_DEBUG] Transfer (H2D): Buffer | Type: f | Elements: 65536 | Total: 262144 bytes
+[BUDE_DEBUG] Transfer (H2D): Buffer | Type: 8FFParams | Elements: 44 | Total: 704 bytes
+[BUDE_DEBUG] Transfer (D2H): Energy Results | Type: f | Elements: 65536 | Total: 262144 bytes
+# (ppwi=2,wgsize=128,valid=1)
+results:
+  - outcome:             { valid: true, max_diff_%: 0.000 }
+    param:               { ppwi: 2, wgsize: 128 }
+    raw_iterations:      [4020.39,4013.31,3937.58,3938.99,3938.45,3964.65,3960.73,3936.37,3946.27,3956.21,3942.91]
+    host_to_device_ms:          259.314871
+    device_to_host_ms:          77.920704
+    sum_ms:              39535.459
+    avg_ms:              3953.546
+    min_ms:              3936.366
+    max_ms:              4013.306
+    stddev_ms:           22.157
+    giga_interactions/s: 118.349
+    gflop/s:             4143.071
+    gfinst/s:            2958.735
+    energies:            
+      - 24293.06
+      - 46384.62
+      - 22487.10
+      - 35002.61
+      - 45883.46
+      - 47784.90
+      - 17952.28
+      - 25230.55
+best: { min_ms: 3936.37, max_ms: 4013.31, sum_ms: 39535.46, avg_ms: 3953.55, ppwi: 2, wgsize: 128 }

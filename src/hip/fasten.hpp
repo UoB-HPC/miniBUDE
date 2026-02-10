@@ -5,6 +5,8 @@
 #include <iostream>
 #include <string>
 
+#include <typeinfo>
+
 #ifdef IMPL_CLS
   #error IMPL_CLS was already defined
 #endif
@@ -195,8 +197,13 @@ public:
     return data;
   }
 
+  //host to device
   template <typename T> [[nodiscard]] static T *allocate(const std::vector<T> &xs) {
     T *data = allocate<T>(xs.size());
+    size_t type_sz = sizeof(T);
+    size_t total_sz = xs.size() * type_sz;
+    printf("[BUDE_DEBUG] Transfer (H2D): Buffer | Type: %s | Elements: %zu | Total: %zu bytes\n", 
+            typeid(T).name(), xs.size(), total_sz);
     checkError(hipMemcpy(data, xs.data(), xs.size() * sizeof(T), hipMemcpyHostToDevice));
     return data;
   }
@@ -249,7 +256,12 @@ public:
       sample.kernelTimes.emplace_back(kernelStart, kernelEnd);
     }
 
+    //device to host
     auto deviceToHostStart = now();
+    size_t d2h_sz = sample.energies.size() * sizeof(float);
+    printf("[BUDE_DEBUG] Transfer (D2H): Energy Results | Type: %s | Elements: %zu | Total: %zu bytes\n", 
+        typeid(float).name(), sample.energies.size(), d2h_sz);
+
     checkError(
         hipMemcpy(sample.energies.data(), results, sample.energies.size() * sizeof(float), hipMemcpyDeviceToHost));
     auto deviceToHostEnd = now();
