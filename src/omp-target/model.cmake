@@ -112,16 +112,7 @@ macro(setup)
 
 
     if (("${OFFLOAD}" STREQUAL OFF) OR (NOT DEFINED OFFLOAD))
-        # no offload
-
-        # resolve the CPU specific flags
-        # starting with ${COMPILER_VENDOR}_${PLATFORM_ARCH}, then try ${COMPILER_VENDOR}, and then give up
-        register_append_compiler_and_arch_specific_cxx_flags(
-                OMP_FLAGS_CPU
-                ${COMPILER}
-                ${ARCH}
-        )
-
+        message(FATAL_ERROR "Please, set the OFFLOAD cmake variable to use OpenMP offload, the format is <VENDOR:ARCH?>|ON|OFF")
     elseif ("${OFFLOAD}" STREQUAL ON)
         #  offload but with custom flags
         register_definitions(OMP_TARGET)

@@ -143,7 +143,6 @@ public:
 
   [[nodiscard]] std::vector<Device> enumerateDevices() override {
     std::vector<Device> devices;
-#ifdef OMP_TARGET
     for (int i = 0; i < omp_get_num_devices(); ++i) {
       devices.template emplace_back(i, "OMP target device #" + std::to_string(i) + " " +
                                            (omp_get_initial_device() == i ? "(host)" : "") +
@@ -151,26 +150,16 @@ public:
     }
 
     devices.template emplace_back(devices.size(), "OMP host device #" + std::to_string(omp_get_initial_device()));
-#else
-    devices.template emplace_back(0, "OMP CPU");
-#endif
     return devices;
   };
 
   [[nodiscard]] Sample fasten(const Params &p, size_t wgsize, size_t device) const override {
 
-#ifdef OMP_TARGET
     omp_set_default_device(int(device));
     if (int actual = omp_get_default_device(); actual != int(device)) {
       throw std::runtime_error("Unable to set omp default device, need " + std::to_string(device) + ", got " +
                                std::to_string(actual));
     }
-#else
-    if (wgsize != 1 && wgsize != 0) {
-      throw std::invalid_argument("Only wgsize = {1|0} (i.e no workgroup) are supported for OpenMP, got " +
-                                  std::to_string((wgsize)));
-    }
-#endif
 
     Sample sample(PPWI, wgsize, p.nposes());
 
@@ -223,7 +212,7 @@ public:
     auto poses_4 = poses[4];
     auto poses_5 = poses[5];
 
-#ifdef OMP_TARGET // clang-format off
+// clang-format off
   #pragma omp target data                                      \
     map(from: energies[:nposes])                               \
     map(to:                                                    \
@@ -231,16 +220,14 @@ public:
       poses_0[:nposes], poses_1[:nposes], poses_2[:nposes],    \
       poses_3[:nposes], poses_4[:nposes], poses_5[:nposes]     \
     )
-#endif // OMP_TARGET clang-format on
+// clang-format on
     for (size_t i = 0; i < p.totalIterations(); ++i) {
       auto kernelStart = now();
 
-#ifdef OMP_TARGET // clang-format off
+// clang-format off
   #pragma omp target teams num_teams(wgsize)
   #pragma omp distribute parallel for
-#else
-  #pragma omp parallel for // note: orphaned 'omp teams' directives are prohibited
-#endif // OMP_TARGET clang-format on
+// clang-format on
       for (size_t group = 0; group < (nposes / PPWI); group++) {
         fasten_main(group, ntypes, nposes, natlig, natpro,                //
                     protein, ligand,                                      //

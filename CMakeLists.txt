@@ -156,7 +156,7 @@ include(cmake/register_models.cmake)
 
 # register out models <model_name> <preprocessor_def_name> <source files...>
 register_model(serial SERIAL fasten.hpp)
-register_model(omp OMP fasten.hpp)
+register_model(omp-target OMP_TARGET fasten.hpp)
 register_model(ocl OCL fasten.hpp)
 register_model(std-indices STD_INDICES fasten.hpp)
 register_model(std-ranges STD_RANGES fasten.hpp) # TODO
