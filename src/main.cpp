@@ -78,7 +78,7 @@
   #include "omp/fasten.hpp"
 #elif defined(SERIAL)
   #include "serial/fasten.hpp"
-#elif defined(THRUST)
+#elif defined(USE_THRUST)
   #include "thrust/fasten.hpp"
 #else
   #error "No model defined"

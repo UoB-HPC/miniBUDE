@@ -45,6 +45,7 @@ macro(setup)
 
         # don't build anything that isn't the RAJA library itself, by default their cmake def builds everything, whyyy?
         set(RAJA_ENABLE_TESTS OFF CACHE BOOL "")
+        set(ENABLE_TESTS OFF CACHE BOOL "")
         set(RAJA_ENABLE_EXAMPLES OFF CACHE BOOL "")
         set(RAJA_ENABLE_EXERCISES OFF CACHE BOOL "")
         set(RAJA_ENABLE_BENCHMARKS OFF CACHE BOOL "")
@@ -90,4 +91,3 @@ macro(setup)
     )
 
 endmacro()
-

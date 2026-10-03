@@ -13,7 +13,7 @@
 #define IMPL_CLS AccBude
 
 // XXX if we make this function part of the templated AccBude class, GCC segfaults at link time
-#pragma acc routine
+#pragma acc routine seq
 template <size_t PPWI>
 static void fasten_main(size_t group, size_t ntypes, size_t nposes, size_t natlig, size_t natpro,        //
                         const Atom *protein, const Atom *ligand,                                         //
@@ -146,7 +146,7 @@ public:
     std::vector<Device> devices;
     acc_device_t device_type = acc_get_device_type();
     for (int i = 0; i < acc_get_num_devices(device_type); ++i) {
-      devices.template emplace_back(i, "OMP target device #" + std::to_string(i));
+      devices.emplace_back(i, "OMP target device #" + std::to_string(i));
     }
     return devices;
   };

@@ -215,8 +215,11 @@ public:
 #endif
   }
 
-  [[nodiscard]] bool compatible(const Params &p, size_t wgsize, size_t device) const {
+  [[nodiscard]] bool compatible(const Params &p, size_t wgsize, size_t device) const override {
     checkError(cudaSetDevice(int(device)));
+#if defined(__ACPP__) || defined(__ADAPTIVECPP__) || defined(__HIPSYCL__)
+    return true;
+#else
     auto data = allocate<int>(1);
     version<<<1, 1>>>(data);
     int rawKernelCC = -2;
@@ -245,6 +248,7 @@ public:
       std::cout << "# Device and kernel cc: sm_" << deviceCC << std::endl;
       return true;
     }
+#endif
   };
 
   [[nodiscard]] Sample fasten(const Params &p, size_t wgsize, size_t device) const override {

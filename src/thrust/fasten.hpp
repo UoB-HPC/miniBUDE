@@ -34,9 +34,11 @@ public:
          transforms_0 = transforms_0.data(), transforms_1 = transforms_1.data(), transforms_2 = transforms_2.data(), //
          transforms_3 = transforms_3.data(), transforms_4 = transforms_4.data(), transforms_5 = transforms_5.data(), //
          forcefield = forcefield.data(),                                                                             //
-         energies = energies.data()] __device__
-#ifndef __NVCC__
-            // otherwise, we get "init-captures are not allowed for extended __host__ __device__"
+         energies = energies.data()]
+#if THRUST_DEVICE_SYSTEM == THRUST_DEVICE_SYSTEM_CUDA ||                                                             \
+    (defined(THRUST_DEVICE_SYSTEM_HIP) && THRUST_DEVICE_SYSTEM == THRUST_DEVICE_SYSTEM_HIP)
+            __device__
+#else
             __host__
 #endif
         (const int group) {
@@ -162,7 +164,7 @@ public:
   #ifdef __NVCC__
     #define IMPL_FN__(fn) cuda##fn
     #define IMPL_TYPE__(tpe) cuda##tpe
-  #elif defined(__HIP_PLATFORM_HCC__)
+  #elif defined(__HIP_PLATFORM_AMD__) || defined(__HIP_PLATFORM_HCC__)
     #define IMPL_FN__(fn) hip##fn
     #define IMPL_TYPE__(tpe) hip##tpe##_t
   #else
@@ -181,7 +183,7 @@ public:
     checkError(IMPL_FN__(GetDeviceCount(&count)));
     std::vector<Device> devices(count);
     for (int i = 0; i < count; ++i) {
-  #if defined(__HIP_PLATFORM_HCC__) //  can't use IMPL_TYPE__ here because of the extra _t suffix, thanks AMD
+  #if defined(__HIP_PLATFORM_AMD__) || defined(__HIP_PLATFORM_HCC__)
       hipDeviceProp_t props{};
   #else
       cudaDeviceProp props{};
@@ -207,7 +209,7 @@ public:
   static inline void synchronise() {
 // rocThrust doesn't synchronise between thrust calls
 #if defined(THRUST_DEVICE_SYSTEM_HIP) && THRUST_DEVICE_SYSTEM == THRUST_DEVICE_SYSTEM_HIP
-    hipDeviceSynchronize();
+    checkError(hipDeviceSynchronize());
 #endif
   }
 

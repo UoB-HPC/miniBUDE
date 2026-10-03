@@ -44,7 +44,7 @@ macro(setup)
 
         set(CMAKE_CUDA_ARCHITECTURES  ${CUDA_ARCH})
         # add -forward-unknown-to-host-compiler for compatibility reasons
-        set(CMAKE_CUDA_FLAGS ${CMAKE_CUDA_FLAGS} "--expt-extended-lambda --expt-relaxed-constexpr" ${CUDA_EXTRA_FLAGS})
+        string(APPEND CMAKE_CUDA_FLAGS " --expt-extended-lambda --expt-relaxed-constexpr ${CUDA_EXTRA_FLAGS}")
         enable_language(CUDA)
         # CMake defaults to -O2 for CUDA at Release, let's wipe that and use the global RELEASE_FLAG
         # appended later
@@ -71,7 +71,7 @@ macro(setup)
         thrust_create_target(Thrust${BACKEND}
                 HOST CPP
                 DEVICE ${BACKEND})
-        set_source_files_properties(${IMPL_SOURCES} PROPERTIES LANGUAGE CUDA)
+        set_source_files_properties(src/main.cpp PROPERTIES LANGUAGE CUDA)
         register_link_library(Thrust${BACKEND})
 
     elseif (${THRUST_IMPL} STREQUAL "ROCM")
@@ -93,5 +93,3 @@ macro(setup)
 
 
 endmacro()
-
-

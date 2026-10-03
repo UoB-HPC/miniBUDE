@@ -20,6 +20,10 @@ register_flag_optional(CUDA_CLANG_DRIVER
         "Disable any nvcc-specific flags so that setting CMAKE_CUDA_COMPILER to clang++ can compile successfully"
         "OFF")
 
+register_flag_optional(ACPP_PCUDA_DRIVER
+        "Assume AdaptiveCpp PCUDA driver"
+        "OFF")
+
 register_flag_optional(CUDA_EXTRA_FLAGS
         "Additional CUDA flags passed to nvcc, this is appended after `CUDA_ARCH`"
         "")
@@ -29,7 +33,8 @@ macro(setup)
 
     # XXX CMake 3.18 supports CMAKE_CUDA_ARCHITECTURES/CUDA_ARCHITECTURES but we support older CMakes
     if (POLICY CMP0104)
-        cmake_policy(SET CMP0104 OLD)
+        cmake_policy(SET CMP0104 NEW)
+        string(REGEX REPLACE "^sm_" "" CMAKE_CUDA_ARCHITECTURES "${CUDA_ARCH}")
     endif ()
 
     set(CMAKE_CXX_STANDARD 17)
@@ -39,24 +44,29 @@ macro(setup)
             message(FATAL_ERROR "Using clang driver for CUDA is only supported for CMake >= 3.18")
         endif ()
         set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -std=c++17 --cuda-gpu-arch=${CUDA_ARCH} ${CUDA_EXTRA_FLAGS}")
+        enable_language(CUDA)
+    elseif (ACPP_PCUDA_DRIVER)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --acpp-pcuda --acpp-pcuda-chevron-launch ${CUDA_EXTRA_FLAGS}")
     else ()
         # add -forward-unknown-to-host-compiler for compatibility reasons
         # add -std=c++17 manually as older CMake seems to omit this (source gets treated as C otherwise)
         set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -std=c++17 -forward-unknown-to-host-compiler -extended-lambda -use_fast_math -restrict -arch=${CUDA_ARCH} ${CUDA_EXTRA_FLAGS}")
+        enable_language(CUDA)
     endif ()
-
-    enable_language(CUDA)
 
     # CMake defaults to -O2 for CUDA at Release, let's wipe that and use the global RELEASE_FLAG
     # appended later
-    wipe_gcc_style_optimisation_flags(CMAKE_CUDA_FLAGS_${BUILD_TYPE})
+    if (NOT ACPP_PCUDA_DRIVER)
+        wipe_gcc_style_optimisation_flags(CMAKE_CUDA_FLAGS_${BUILD_TYPE})
+    endif ()
 
     # since we're doing a single-source w/ templated kernel build
     # everything is a CUDA file
 
-    set_source_files_properties(src/main.cpp PROPERTIES LANGUAGE CUDA)
+    if (NOT ACPP_PCUDA_DRIVER)
+        set_source_files_properties(src/main.cpp PROPERTIES LANGUAGE CUDA)
+    endif ()
 
 
     message(STATUS "NVCC flags: ${CMAKE_CUDA_FLAGS} ${CMAKE_CUDA_FLAGS_${BUILD_TYPE}}")
 endmacro()
-

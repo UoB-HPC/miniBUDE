@@ -168,7 +168,7 @@ register_model(acc ACC fasten.hpp)
 # defining RAJA collides with the RAJA namespace so USE_RAJA
 register_model(raja USE_RAJA fasten.hpp)
 register_model(tbb TBB fasten.hpp)
-register_model(thrust THRUST fasten.hpp) # TODO
+register_model(thrust USE_THRUST fasten.hpp) # TODO
 
 set(USAGE ON CACHE BOOL "Whether to print all custom flags for the selected model")
 
@@ -295,3 +295,11 @@ endif ()
 set_target_properties(${EXE_NAME} PROPERTIES OUTPUT_NAME "${BIN_NAME}")
 
 install(TARGETS ${EXE_NAME} DESTINATION bin)
+
+include(CTest)
+if (BUILD_TESTING)
+    add_test(NAME solution
+            COMMAND $<TARGET_FILE:${EXE_NAME}> --deck ${CMAKE_SOURCE_DIR}/data/bm1
+                    --iter 1 --poses 1024 --rows 0)
+    set_tests_properties(solution PROPERTIES LABELS solution)
+endif ()

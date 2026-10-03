@@ -145,14 +145,14 @@ public:
     std::vector<Device> devices;
 #ifdef OMP_TARGET
     for (int i = 0; i < omp_get_num_devices(); ++i) {
-      devices.template emplace_back(i, "OMP target device #" + std::to_string(i) + " " +
-                                           (omp_get_initial_device() == i ? "(host)" : "") +
-                                           (omp_get_default_device() == i ? "(default)" : ""));
+      devices.emplace_back(i, "OMP target device #" + std::to_string(i) + " " +
+                                  (omp_get_initial_device() == i ? "(host)" : "") +
+                                  (omp_get_default_device() == i ? "(default)" : ""));
     }
 
-    devices.template emplace_back(devices.size(), "OMP host device #" + std::to_string(omp_get_initial_device()));
+    devices.emplace_back(devices.size(), "OMP host device #" + std::to_string(omp_get_initial_device()));
 #else
-    devices.template emplace_back(0, "OMP CPU");
+    devices.emplace_back(0, "OMP CPU");
 #endif
     return devices;
   };

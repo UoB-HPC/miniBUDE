@@ -65,6 +65,26 @@ suitable flags will set automatically if compiling with GCC/Clang and NVHPC.**
 omp;ocl;std-indices;std-ranges;hip;cuda;kokkos;sycl;acc;raja;tbb;thrust
 ```
 
+### Static builds
+
+Build the serial model statically with:
+
+```shell
+$ cmake -Bbuild-static-serial -H. -DMODEL=serial \
+    -DCMAKE_EXE_LINKER_FLAGS=-static
+$ cmake --build build-static-serial
+```
+
+For a static GCC OpenMP build, select GCC's static OpenMP runtime explicitly:
+
+```shell
+$ CXX=g++
+$ cmake -Bbuild-static-omp -H. -DMODEL=omp \
+    -DCMAKE_CXX_COMPILER="$CXX" -DCMAKE_EXE_LINKER_FLAGS=-static \
+    -DOpenMP_gomp_LIBRARY="$("$CXX" -print-file-name=libgomp.a)"
+$ cmake --build build-static-omp
+```
+
 ## Running
 
 By default, the following PPWI sizes are compiled: `1,2,4,8,16,32,64,128`.

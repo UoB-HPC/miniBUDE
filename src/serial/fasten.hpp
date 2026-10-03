@@ -138,7 +138,7 @@ public:
 
   [[nodiscard]] std::vector<Device> enumerateDevices() override {
     std::vector<Device> devices;
-    devices.template emplace_back(0, "Serial CPU");
+    devices.emplace_back(0, "Serial CPU");
     return devices;
   };
 

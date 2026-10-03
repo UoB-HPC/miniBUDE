@@ -1,12 +1,10 @@
 #pragma once
 
 #include "../bude.h"
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 #include <cstdint>
 #include <iostream>
 #include <string>
-
-using namespace cl;
 
 #ifdef IMPL_CLS
   #error IMPL_CLS was already defined
@@ -19,10 +17,7 @@ template <size_t PPWI> class IMPL_CLS final : public Bude<PPWI> {
 
   static constexpr sycl::access::mode R = sycl::access::mode::read;
   static constexpr sycl::access::mode DW = sycl::access::mode::discard_write;
-  static constexpr sycl::access::mode RW = sycl::access::mode::read_write;
-
-  static constexpr sycl::access::target Global = sycl::access::target::global_buffer;
-  static constexpr sycl::access::target Local = sycl::access::target::local;
+  static constexpr sycl::access::target Global = sycl::access::target::device;
 
   template <typename T, sycl::access::mode A = R> using accessor1 = sycl::accessor<T, 1, A, Global>;
 
@@ -39,7 +34,7 @@ template <size_t PPWI> class IMPL_CLS final : public Bude<PPWI> {
     size_t global = std::ceil(double(nposes) / PPWI);
     global = wgsize * size_t(std::ceil(double(global) / double(wgsize)));
 
-    sycl::accessor<FFParams, 1, RW, Local> local_forcefield(sycl::range<1>(ntypes), h);
+    sycl::local_accessor<FFParams, 1> local_forcefield(sycl::range<1>(ntypes), h);
 
     h.parallel_for<bude_kernel_ndrange<PPWI>>(sycl::nd_range<1>(global, wgsize), [=](sycl::nd_item<1> item) {
       const size_t lid = item.get_local_id(0);
@@ -95,7 +90,7 @@ template <size_t PPWI> class IMPL_CLS final : public Bude<PPWI> {
       item.barrier(sycl::access::fence_space::local_space);
 
       // Loop over ligand atoms
-      for (size_t il = 0; il < ligands.get_count(); il++) {
+      for (size_t il = 0; il < ligands.size(); il++) {
         // Load ligand atom data
         const Atom l_atom = ligands[il];
         const FFParams l_params = local_forcefield[l_atom.type];
@@ -115,7 +110,7 @@ template <size_t PPWI> class IMPL_CLS final : public Bude<PPWI> {
         }
 
         // Loop over protein atoms
-        for (size_t ip = 0; ip < proteins.get_count(); ip++) {
+        for (size_t ip = 0; ip < proteins.size(); ip++) {
           // Load protein atom data
           const Atom p_atom = proteins[ip];
           const FFParams p_params = local_forcefield[p_atom.type];
@@ -184,7 +179,7 @@ template <size_t PPWI> class IMPL_CLS final : public Bude<PPWI> {
     });
   }
 
-  std::vector<cl::sycl::device> devices;
+  std::vector<sycl::device> devices;
 
 public:
   IMPL_CLS() : devices(sycl::device::get_devices()) {}

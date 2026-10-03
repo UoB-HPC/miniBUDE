@@ -9,6 +9,7 @@ register_flag_required(SYCL_COMPILER
            ONEAPI-ICPX  - icpx as a standalone compiler
            ONEAPI-Clang - oneAPI's Clang driver (enabled via `source /opt/intel/oneapi/setvars.sh  --include-intel-llvm`)
            DPCPP        - dpc++ as a standalone compiler (https://github.com/intel/llvm)
+           ADAPTIVECPP  - AdaptiveCpp compiler
            HIPSYCL      - hipSYCL compiler (https://github.com/illuhad/hipSYCL)
            COMPUTECPP   - ComputeCpp compiler (https://developer.codeplay.com/products/computecpp/ce/home)")
 
@@ -16,7 +17,7 @@ register_flag_optional(SYCL_COMPILER_DIR
         "Absolute path to the selected SYCL compiler directory, most are packaged differently so set the path according to `SYCL_COMPILER`:
            ONEAPI-ICPX              - `icpx` must be used for OneAPI 2023 and later on releases (i.e `source /opt/intel/oneapi/setvars.sh` first)
            ONEAPI-Clang             - set to the directory that contains the Intel clang++ binary.
-           HIPSYCL|DPCPP|COMPUTECPP - set to the root of the binary distribution that contains at least `bin/`, `include/`, and `lib/`"
+           ADAPTIVECPP|HIPSYCL|DPCPP|COMPUTECPP - set to the root of the binary distribution that contains at least `bin/`, `include/`, and `lib/`"
         "")
 
 register_flag_optional(OpenCL_LIBRARY
@@ -27,7 +28,12 @@ macro(setup)
     set(CMAKE_CXX_STANDARD 17)
 
 
-    if (${SYCL_COMPILER} STREQUAL "HIPSYCL")
+    if (${SYCL_COMPILER} STREQUAL "ADAPTIVECPP")
+
+        set(AdaptiveCpp_DIR ${SYCL_COMPILER_DIR}/lib/cmake/AdaptiveCpp)
+        find_package(AdaptiveCpp CONFIG REQUIRED)
+
+    elseif (${SYCL_COMPILER} STREQUAL "HIPSYCL")
 
 
         set(hipSYCL_DIR ${SYCL_COMPILER_DIR}/lib/cmake/hipSYCL)
@@ -84,8 +90,9 @@ endmacro()
 macro(setup_target NAME)
     if (
     (${SYCL_COMPILER} STREQUAL "COMPUTECPP") OR
+    (${SYCL_COMPILER} STREQUAL "ADAPTIVECPP") OR
     (${SYCL_COMPILER} STREQUAL "HIPSYCL"))
-        # so ComputeCpp and hipSYCL has this weird (and bad) CMake usage where they append their
+        # These integrations append their
         # own custom integration header flags AFTER the target has been specified
         # hence this macro here
         add_sycl_to_target(

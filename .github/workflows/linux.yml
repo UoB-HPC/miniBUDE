@@ -1,0 +1,91 @@
+name: Linux
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.variant }}
+    strategy:
+      fail-fast: false
+      max-parallel: 32
+      matrix:
+        # prettier-ignore
+        include:
+          - {variant: "gcc-9-serial", model: "serial", toolchain: &gcc_9 {image: "docker.io/library/ubuntu:22.04", cc: "gcc-9", cxx: "g++-9", packages: "g++-9"}}
+          - {variant: "gcc-9-omp", model: "omp", toolchain: *gcc_9}
+          - {variant: "gcc-10-serial", model: "serial", toolchain: &gcc_10 {image: "docker.io/library/ubuntu:22.04", cc: "gcc-10", cxx: "g++-10", packages: "g++-10"}}
+          - {variant: "gcc-10-omp", model: "omp", toolchain: *gcc_10}
+          - {variant: "gcc-11-serial", model: "serial", toolchain: &gcc_11 {image: "docker.io/library/ubuntu:22.04", cc: "gcc-11", cxx: "g++-11", packages: "g++-11"}}
+          - {variant: "gcc-11-omp", model: "omp", toolchain: *gcc_11}
+          - {variant: "gcc-12-serial", model: "serial", toolchain: &gcc_12 {image: "docker.io/library/ubuntu:22.04", cc: "gcc-12", cxx: "g++-12", packages: "g++-12"}}
+          - {variant: "gcc-12-omp", model: "omp", toolchain: *gcc_12}
+          - {variant: "gcc-13-serial", model: "serial", toolchain: &gcc_13 {image: "docker.io/library/ubuntu:24.04", cc: "gcc-13", cxx: "g++-13", packages: "g++-13"}}
+          - {variant: "gcc-13-omp", model: "omp", toolchain: *gcc_13}
+          - {variant: "gcc-14-serial", model: "serial", toolchain: &gcc_14 {image: "docker.io/library/ubuntu:24.04", cc: "gcc-14", cxx: "g++-14", packages: "g++-14"}}
+          - {variant: "gcc-14-omp", model: "omp", toolchain: *gcc_14}
+          - {variant: "gcc-15-serial", model: "serial", toolchain: &gcc_15 {image: "docker.io/library/ubuntu:24.04", cc: "gcc-15", cxx: "g++-15", packages: "g++-15", apt_key: "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xC8EC952E2A0E1FBDC5090F6A2C277A0A352154E5",
+              apt_source: "https://ppa.launchpadcontent.net/ubuntu-toolchain-r/test/ubuntu noble main"}}
+          - {variant: "gcc-15-omp", model: "omp", toolchain: *gcc_15}
+
+          - {variant: "clang-11-serial", model: "serial", toolchain: &clang_11 {image: "docker.io/library/ubuntu:22.04", cc: "clang-11", cxx: "clang++-11", packages: "clang-11"}}
+          - {variant: "clang-11-omp", model: "omp", model_packages: "libomp-11-dev", toolchain: *clang_11}
+          - {variant: "clang-12-serial", model: "serial", toolchain: &clang_12 {image: "docker.io/library/ubuntu:22.04", cc: "clang-12", cxx: "clang++-12", packages: "clang-12"}}
+          - {variant: "clang-12-omp", model: "omp", model_packages: "libomp-12-dev", toolchain: *clang_12}
+          - {variant: "clang-13-serial", model: "serial", toolchain: &clang_13 {image: "docker.io/library/ubuntu:22.04", cc: "clang-13", cxx: "clang++-13", packages: "clang-13"}}
+          - {variant: "clang-13-omp", model: "omp", model_packages: "libomp-13-dev", toolchain: *clang_13}
+          - {variant: "clang-14-serial", model: "serial", toolchain: &clang_14 {image: "docker.io/library/ubuntu:22.04", cc: "clang-14", cxx: "clang++-14", packages: "clang-14"}}
+          - {variant: "clang-14-omp", model: "omp", model_packages: "libomp-14-dev", toolchain: *clang_14}
+          - {variant: "clang-15-serial", model: "serial", toolchain: &clang_15 {image: "docker.io/library/ubuntu:22.04", cc: "clang-15", cxx: "clang++-15", packages: "clang-15"}}
+          - {variant: "clang-15-omp", model: "omp", model_packages: "libomp-15-dev", toolchain: *clang_15}
+          - {variant: "clang-16-serial", model: "serial", toolchain: &clang_16 {image: "docker.io/library/ubuntu:24.04", cc: "clang-16", cxx: "clang++-16", packages: "clang-16"}}
+          - {variant: "clang-16-omp", model: "omp", model_packages: "libomp-16-dev", toolchain: *clang_16}
+          - {variant: "clang-17-serial", model: "serial", toolchain: &clang_17 {image: "docker.io/library/ubuntu:24.04", cc: "clang-17", cxx: "clang++-17", packages: "clang-17"}}
+          - {variant: "clang-17-omp", model: "omp", model_packages: "libomp-17-dev", toolchain: *clang_17}
+          - {variant: "clang-18-serial", model: "serial", toolchain: &clang_18 {image: "docker.io/library/ubuntu:24.04", cc: "clang-18", cxx: "clang++-18", packages: "clang-18"}}
+          - {variant: "clang-18-omp", model: "omp", model_packages: "libomp-18-dev", toolchain: *clang_18}
+          - {variant: "clang-19-serial", model: "serial", toolchain: &clang_19 {image: "docker.io/library/ubuntu:26.04", cc: "clang-19", cxx: "clang++-19", packages: "clang-19 libstdc++-16-dev"}}
+          - {variant: "clang-19-omp", model: "omp", model_packages: "libomp-19-dev", toolchain: *clang_19}
+          - {variant: "clang-20-serial", model: "serial", toolchain: &clang_20 {image: "docker.io/library/ubuntu:26.04", cc: "clang-20", cxx: "clang++-20", packages: "clang-20 libstdc++-16-dev"}}
+          - {variant: "clang-20-omp", model: "omp", model_packages: "libomp-20-dev", toolchain: *clang_20}
+          - {variant: "clang-21-serial", model: "serial", toolchain: &clang_21 {image: "docker.io/library/ubuntu:26.04", cc: "clang-21", cxx: "clang++-21", packages: "clang-21 libstdc++-16-dev"}}
+          - {variant: "clang-21-omp", model: "omp", model_packages: "libomp-21-dev", toolchain: *clang_21}
+
+          - {variant: "oneapi-serial", model: "serial", toolchain: &oneapi {architectures: [x86_64], image: "docker.io/library/ubuntu:24.04", cc: "/opt/intel/oneapi/compiler/2025.3/bin/icx", cxx: "/opt/intel/oneapi/compiler/2025.3/bin/icpx",
+              packages: "intel-oneapi-dpcpp-cpp-2025.3", apt_key: "https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB", apt_source: "https://apt.repos.intel.com/oneapi all main", env_script: "/opt/intel/oneapi/setvars.sh"}}
+          - {variant: "oneapi-omp", model: "omp", toolchain: *oneapi}
+          - {variant: "oneapi-sycl", model: "sycl", cmake_args: "-DSYCL_COMPILER=ONEAPI-ICPX", model_packages: "pocl-opencl-icd", toolchain: *oneapi}
+
+          - {variant: "nvhpc-serial", model: "serial", toolchain: &nvhpc {image: "nvcr.io/nvidia/nvhpc:26.5-devel-cuda13.2-ubuntu24.04", cc: "nvc", cxx: "nvc++", native_flags: "-tp=native", cleanup_disk: true}}
+          - {variant: "nvhpc-omp", model: "omp", toolchain: *nvhpc}
+          - {variant: "nvhpc-acc", model: "acc", cmake_args: "-DTARGET_DEVICE=multicore", toolchain: *nvhpc}
+
+          - {variant: "gcc-13-omp-target", model: "omp", cmake_args: "-DOFFLOAD=ON -DOFFLOAD_FLAGS=-fopenmp", toolchain: *gcc_13}
+          - {variant: "gcc-13-std-indices", model: "std-indices", model_packages: "libtbb-dev", cmake_args: "-DCXX_EXTRA_LIBRARIES=tbb", toolchain: *gcc_13}
+          - {variant: "gcc-13-std-ranges", model: "std-ranges", model_packages: "libtbb-dev", cmake_args: "-DCXX_EXTRA_LIBRARIES=tbb", toolchain: *gcc_13}
+          - {variant: "gcc-13-tbb", model: "tbb", model_packages: "libtbb-dev", toolchain: *gcc_13}
+          - {variant: "gcc-13-ocl", model: "ocl", model_packages: "ocl-icd-opencl-dev pocl-opencl-icd", toolchain: *gcc_13}
+          - {variant: "gcc-13-kokkos", model: "kokkos", kokkos_ref: "4.7.04", cmake_args: "-DKOKKOS_IN_TREE=/opt/kokkos -DKokkos_ENABLE_SERIAL=ON", model_packages: "git", toolchain: *gcc_13}
+          - {variant: "gcc-13-raja", model: "raja", raja_ref: "v0.14.0", cmake_args: "-DRAJA_IN_TREE=/opt/raja -DENABLE_OPENMP=ON", model_packages: "git", toolchain: *gcc_13}
+
+          - {variant: "adaptivecpp-sycl", model: "sycl", cmake_args: "-DSYCL_COMPILER=ADAPTIVECPP -DSYCL_COMPILER_DIR=/opt/adaptivecpp -DACPP_TARGETS=generic", toolchain: &adaptivecpp {
+              image: "docker.io/library/ubuntu:24.04", cc: "clang-18", cxx: "clang++-18", packages: "clang-18 llvm-18-dev libclang-18-dev libclang-cpp18-dev libomp-18-dev libnuma-dev lld-18 python3", source_url: "https://github.com/AdaptiveCpp/AdaptiveCpp/archive/refs/tags/v25.10.0.tar.gz",
+              sha256: "334b16ebff373bd2841f83332c2ae9a45ec192f2cf964d5fdfe94e1140776059"}}
+          - {variant: "adaptivecpp-pcuda", model: "cuda", cmake_args: "-DACPP_PCUDA_DRIVER=ON -DCMAKE_CXX_COMPILER=/opt/adaptivecpp/bin/acpp -DCMAKE_CUDA_COMPILER=/opt/adaptivecpp/bin/acpp -DCUDA_ARCH=sm_80 -DCUDA_EXTRA_FLAGS=--acpp-targets=generic",
+              toolchain: *adaptivecpp}
+
+          - {variant: "cuda", model: "cuda", cmake_args: "-DCMAKE_CUDA_COMPILER=/usr/local/cuda-13.2/bin/nvcc -DCUDA_ARCH=sm_80", skip_run: true, toolchain: &cuda {image: "docker.io/library/ubuntu:24.04",
+              cc: "gcc", cxx: "g++", packages: "cuda-nvcc-13-2", native_cuda: true, arm_apt_key: "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/sbsa/3bf863cc.pub",
+              arm_apt_source: "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/sbsa/ /", apt_key: "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/3bf863cc.pub",
+              apt_source: "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/ /"}}
+          - {variant: "cuda-thrust", model: "thrust", cmake_args: "-DCMAKE_CUDA_COMPILER=/usr/local/cuda-13.2/bin/nvcc -DCUDA_ARCH=80 -DTHRUST_IMPL=CUDA -DBACKEND=CUDA", model_packages: "cuda-cccl-13-2", skip_run: true, toolchain: *cuda}
+          - {variant: "cuda-thrust-omp", model: "thrust", cmake_args: "-DCMAKE_CUDA_COMPILER=/usr/local/cuda-13.2/bin/nvcc -DCUDA_ARCH=80 -DTHRUST_IMPL=CUDA -DBACKEND=OMP", model_packages: "cuda-cccl-13-2", toolchain: *cuda}
+
+          - {variant: "rocm-hip", model: "hip", cmake_args: "-DCXX_EXTRA_FLAGS=--offload-arch=gfx90a", skip_run: true, toolchain: &rocm {architectures: [x86_64], image: "docker.io/library/ubuntu:24.04", cc: "gcc", cxx: "/opt/rocm/bin/hipcc",
+              packages: "hip-dev rocm-device-libs", apt_key: "https://repo.radeon.com/rocm/rocm.gpg.key", apt_source: "https://repo.radeon.com/rocm/apt/7.2.4/ noble main"}}
+          - {variant: "rocm-thrust", model: "thrust", cmake_args: "-DCMAKE_PREFIX_PATH=/opt/rocm -DSDK_DIR=/opt/rocm/lib/cmake -DTHRUST_IMPL=ROCM", model_packages: "rocthrust-dev rocprim-dev", skip_run: true, toolchain: *rocm}
+    uses: ./.github/workflows/build.yml
+    with:
+      configuration: ${{ toJSON(matrix) }}
