@@ -92,6 +92,24 @@ struct Sample {
 
 using Device = std::pair<size_t, std::string>;
 
+inline std::string yaml_quote(const std::string &value) {
+  constexpr char hex[] = "0123456789abcdef";
+  std::string result = "\"";
+  for (unsigned char c : value) {
+    if (c == '"' || c == '\\') {
+      result += '\\';
+      result += c;
+    } else if (c < 0x20 || c == 0x7f) {
+      result += "\\x";
+      result += hex[c >> 4];
+      result += hex[c & 0xf];
+    } else {
+      result += c;
+    }
+  }
+  return result + '"';
+}
+
 template <size_t PPWI> class Bude {
 public:
   [[nodiscard]] virtual std::string name() = 0;

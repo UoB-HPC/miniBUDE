@@ -1,5 +1,7 @@
 # miniBUDE
 
+[![DOI](https://img.shields.io/badge/DOI-10.1007%2F978--3--030--78713--4__18-blue)](https://doi.org/10.1007/978-3-030-78713-4_18) [![CI](https://github.com/UoB-HPC/miniBUDE/actions/workflows/linux.yml/badge.svg)](https://github.com/UoB-HPC/miniBUDE/actions/workflows/linux.yml)
+
 This mini-app is an implementation of the core computation of the Bristol University Docking
 Engine (BUDE) in different HPC programming models.
 The benchmark is a virtual screening run of the NDM-1 protein and runs the energy evaluation for a

@@ -501,17 +501,17 @@ bool run(const Params &p, const std::vector<size_t> &wgsizes, const std::vector<
   if (p.list) {
     std::cout << (p.csv ? "index,name" : "devices:") << std::endl;
     for (size_t j = 0; j < devices.size(); ++j)
-      if (p.csv)                                                                    //
-        std::cout << j << "," << devices[j].second << std::endl;                    //
-      else                                                                          //
-        std::cout << "  " << j << ": \"" << devices[j].second << "\"" << std::endl; //
+      if (p.csv)                                                                      //
+        std::cout << j << "," << devices[j].second << std::endl;                      //
+      else                                                                            //
+        std::cout << "  " << j << ": " << yaml_quote(devices[j].second) << std::endl; //
     return true;
   } else {
     auto dev = selectDevice(p.deviceSelector, devices);
     if (dev.first >= 0) {
       if (!p.csv)
         std::cout << "device: { index: " << dev.first << ", "
-                  << " name: \"" << dev.second << "\" }" << std::endl;
+                  << " name: " << yaml_quote(dev.second) << " }" << std::endl;
       bool dump = true;
       std::vector<Result> results;
       for (auto &ppwi : ppwis) {
@@ -572,16 +572,18 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> compileCmds = MINIBUDE_COMPILE_COMMANDS;
     std::vector<std::string> quotedCmds;
     std::transform(compileCmds.begin(), compileCmds.end(), std::back_inserter(quotedCmds),
-                   [](auto &s) { return "\"" + s + "\""; });
+                   [](const auto &s) { return yaml_quote(s); });
 
-    std::cout << "miniBUDE:  " << MINIBUDE_VERSION << "\n"
+    std::cout << "miniBUDE:  " << yaml_quote(MINIBUDE_VERSION) << "\n"
               << "compile_commands:\n   - " << mk_string(quotedCmds, "\n   - ") << "\n"
               << "vcs:\n";
 #ifdef MINIBUDE_VCS_RETRIEVED_STATE
-    std::cout << "  commit:  " << MINIBUDE_VCS_HEAD_SHA1 << (MINIBUDE_VCS_IS_DIRTY ? "*" : "") << "\n"
-              << "  author:  \"" << MINIBUDE_VCS_AUTHOR_NAME << " (" << MINIBUDE_VCS_AUTHOR_EMAIL << ")\"\n"
-              << "  date:    \"" << MINIBUDE_VCS_COMMIT_DATE_ISO8601 << "\"\n"
-              << "  subject: \"" << MINIBUDE_VCS_COMMIT_SUBJECT << "\"\n";
+    std::cout << "  commit:  " << yaml_quote(std::string(MINIBUDE_VCS_HEAD_SHA1) + (MINIBUDE_VCS_IS_DIRTY ? "*" : ""))
+              << "\n"
+              << "  author:  "
+              << yaml_quote(std::string(MINIBUDE_VCS_AUTHOR_NAME) + " (" + MINIBUDE_VCS_AUTHOR_EMAIL + ")") << "\n"
+              << "  date:    " << yaml_quote(MINIBUDE_VCS_COMMIT_DATE_ISO8601) << "\n"
+              << "  subject: " << yaml_quote(MINIBUDE_VCS_COMMIT_SUBJECT) << "\n";
 #else
     std::cout << "   # " MINIBUDE_WARN_NOT_CMAKE "\n";
 #endif
@@ -592,52 +594,49 @@ int main(int argc, char *argv[]) {
     const auto info = cpu_features::GetX86Info();
     char brand_string[49];
     cpu_features::FillX86BrandString(brand_string);
-    std::cout << "  arch:     \""
-              << "x86 "
-              << "(" << GetX86MicroarchitectureName(GetX86Microarchitecture(&info)) << ")\"\n"
-              << "  brand:    \"" << brand_string << "\"\n"
-              << "  family:   \"" << info.family << "\"\n"
-              << "  model:    \"" << info.model << "\"\n"
-              << "  stepping: \"" << info.stepping << "\"" << std::endl;
+    std::cout << "  arch:     "
+              << yaml_quote("x86 (" + std::string(GetX86MicroarchitectureName(GetX86Microarchitecture(&info))) + ")")
+              << "\n"
+              << "  brand:    " << yaml_quote(brand_string) << "\n"
+              << "  family:   " << yaml_quote(std::to_string(info.family)) << "\n"
+              << "  model:    " << yaml_quote(std::to_string(info.model)) << "\n"
+              << "  stepping: " << yaml_quote(std::to_string(info.stepping)) << std::endl;
 #elif defined(CPU_FEATURES_ARCH_ARM)
     const auto info = cpu_features::GetArmInfo();
-    std::cout << "  arch:        \""
-              << "arm "
-              << "(" << info.architecture << ")\"\n"
-              << "  implementer: \"" << info.implementer << "\"\n"
-              << "  variant:     \"" << info.variant << "\"\n"
-              << "  part:        \"" << info.part << "\"\n"
-              << "  revision:    \"" << info.revision << "\"" << std::endl;
+    std::cout << "  arch:        " << yaml_quote("arm (" + std::to_string(info.architecture) + ")") << "\n"
+              << "  implementer: " << yaml_quote(std::to_string(info.implementer)) << "\n"
+              << "  variant:     " << yaml_quote(std::to_string(info.variant)) << "\n"
+              << "  part:        " << yaml_quote(std::to_string(info.part)) << "\n"
+              << "  revision:    " << yaml_quote(std::to_string(info.revision)) << std::endl;
 #elif defined(CPU_FEATURES_ARCH_AARCH64)
     const auto info = cpu_features::GetAarch64Info();
-    std::cout << "  arch:        \"aarch64\"\n"
-              << "  implementer: \"" << info.implementer << "\"\n"
-              << "  variant:     \"" << info.variant << "\"\n"
-              << "  part:        \"" << info.part << "\"\n"
-              << "  revision:    \"" << info.revision << "\"" << std::endl;
+    std::cout << "  arch:        " << yaml_quote("aarch64") << "\n"
+              << "  implementer: " << yaml_quote(std::to_string(info.implementer)) << "\n"
+              << "  variant:     " << yaml_quote(std::to_string(info.variant)) << "\n"
+              << "  part:        " << yaml_quote(std::to_string(info.part)) << "\n"
+              << "  revision:    " << yaml_quote(std::to_string(info.revision)) << std::endl;
 #elif defined(CPU_FEATURES_ARCH_MIPS)
     const auto info = cpu_features::GetMipsInfo();
-    std::cout << "  arch :\"mips\"" << std::endl;
+    std::cout << "  arch: " << yaml_quote("mips") << std::endl;
 #elif defined(CPU_FEATURES_ARCH_PPC)
     const auto strings = cpu_features::GetPPCPlatformStrings();
-    std::cout << "  arch :    \""
-              << "ppc "
-              << "(" << strings.type.base_platform << ")\"\n"
-              << "  platform: \"" << strings.platform << "\"\n"
-              << "  model:    \"" << strings.model << "\"\n"
-              << "  machine:  \"" << strings.machine << "\"\n"
-              << "  cpu:      \"" << strings.cpu << "\"" << std::endl;
+    std::cout << "  arch:     " << yaml_quote("ppc (" + std::string(strings.type.base_platform) + ")") << "\n"
+              << "  platform: " << yaml_quote(strings.platform) << "\n"
+              << "  model:    " << yaml_quote(strings.model) << "\n"
+              << "  machine:  " << yaml_quote(strings.machine) << "\n"
+              << "  cpu:      " << yaml_quote(strings.cpu) << std::endl;
 #else
     std::cout << "  ~" << std::endl;
 #endif
 
     auto now = std::time(nullptr);
-    std::cout << "time: { epoch_s:" << now << ", formatted: \"" << std::put_time(std::gmtime(&now), "%c %Z") << "\" }"
-              << std::endl;
+    std::ostringstream formatted_time;
+    formatted_time << std::put_time(std::gmtime(&now), "%c %Z");
+    std::cout << "time: { epoch_s:" << now << ", formatted: " << yaml_quote(formatted_time.str()) << " }" << std::endl;
 
     if (!params.list) {
       std::cout << "deck:\n"
-                << "  path:         \"" << params.deckDir << "\"\n"
+                << "  path:         " << yaml_quote(params.deckDir) << "\n"
                 << "  poses:        " << params.maxPoses << "\n"
                 << "  proteins:     " << params.natpro() << "\n"
                 << "  ligands:      " << params.natlig() << "\n"
