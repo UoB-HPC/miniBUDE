@@ -3,6 +3,7 @@
 #include "../bude.h"
 #include <iostream>
 #include <string>
+#include <cuda.h>
 
 #ifdef IMPL_CLS
   #error IMPL_CLS was already defined
