@@ -36,17 +36,23 @@
 
 static constexpr auto FloatMax = std::numeric_limits<float>::max();
 
-struct __attribute__((__packed__)) Atom {
+// XXX don't use packed: NVIDIA faults on misaligned access so align 1 forces byte loads, alignas(16) allows 128-bit loads
+// on CPUs that allow misaligned access e.g x86 and AArch64, the attribute (packed or alignas) has no effect
+struct alignas(16) Atom {
   float x, y, z;
   int32_t type;
 };
 
-struct __attribute__((__packed__)) FFParams {
+// XXX see above
+struct alignas(16) FFParams {
   int32_t hbtype;
   float radius;
   float hphb;
   float elsc;
 };
+
+static_assert(sizeof(Atom) == 16);
+static_assert(sizeof(FFParams) == 16);
 
 template <typename T> struct Vec3 { T x, y, z; };
 template <typename T> struct Vec4 { T x, y, z, w; };
