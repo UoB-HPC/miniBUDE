@@ -20,7 +20,7 @@
 #endif
 
 const static auto exec_policy = oneapi::dpl::execution::device_policy<>{
-        oneapi::dpl::execution::make_device_policy(sycl::default_selector{})
+        oneapi::dpl::execution::make_device_policy(sycl::device{sycl::default_selector_v})
 };
 
 template<typename T>
