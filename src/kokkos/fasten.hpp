@@ -183,7 +183,7 @@ public:
 public:
   IMPL_CLS() = default;
 
-  [[nodiscard]] std::string name() { return "kokkos"; };
+  [[nodiscard]] std::string name() override { return "kokkos"; };
 
   [[nodiscard]] std::vector<Device> enumerateDevices() override {
     return {{0, std::string(typeid(Kokkos::DefaultExecutionSpace).name()) + " (specify backend at compile-time)"}};

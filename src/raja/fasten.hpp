@@ -264,7 +264,7 @@ public:
 public:
   IMPL_CLS() = default;
 
-  [[nodiscard]] std::string name() { return "raja"; };
+  [[nodiscard]] std::string name() override { return "raja"; };
 
   [[nodiscard]] std::vector<Device> enumerateDevices() override {
     std::vector<Device> devices{{RAJA::expt::ExecPlace::HOST, "RAJA Host device"}};
