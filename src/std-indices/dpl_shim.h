@@ -13,10 +13,14 @@
 
 #if ONEDPL_USE_DPCPP_BACKEND
 
+#if __has_include(<sycl/sycl.hpp>)
+#include <sycl/sycl.hpp>
+#else
 #include <CL/sycl.hpp>
+#endif
 
 const static auto exec_policy = oneapi::dpl::execution::device_policy<>{
-        oneapi::dpl::execution::make_device_policy(cl::sycl::default_selector{})
+        oneapi::dpl::execution::make_device_policy(sycl::default_selector{})
 };
 
 template<typename T>
@@ -53,13 +57,17 @@ static constexpr auto exec_policy = std::execution::par_unseq;
 #ifdef USE_STD_PTR_ALLOC_DEALLOC
 
   #if defined(__HIPSYCL__) || defined(__OPENSYCL__)
-    #include <CL/sycl.hpp>
+    #if __has_include(<sycl/sycl.hpp>)
+      #include <sycl/sycl.hpp>
+    #else
+      #include <CL/sycl.hpp>
+    #endif
 
 // TODO We temporarily use malloc_shared/free here for hipSYCL stdpar because there's a linking issue if we let it
 //  hijack new/delete for this to work, we compile with --hipsycl-stdpar-system-usm so that hijacking is disabled
-static cl::sycl::queue queue{cl::sycl::default_selector_v};
-template <typename T> T *alloc_raw(size_t size) { return cl::sycl::malloc_shared<T>(size, queue); }
-template <typename T> void dealloc_raw(T *ptr) { cl::sycl::free(ptr, queue); }
+static sycl::queue queue{sycl::default_selector_v};
+template <typename T> T *alloc_raw(size_t size) { return sycl::malloc_shared<T>(size, queue); }
+template <typename T> void dealloc_raw(T *ptr) { sycl::free(ptr, queue); }
 
   #else
 
